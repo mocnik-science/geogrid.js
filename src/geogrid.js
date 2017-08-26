@@ -1,3 +1,5 @@
+require('./geogrid.scss')
+
 if (typeof L === 'undefined') throw "geogrid.js needs Leaflet to be loaded first"
 if (typeof d3 === 'undefined') throw "geogrid.js needs D3.js to be loaded first"
 
@@ -35,6 +37,12 @@ L.ISEA3HLayer = L.Layer.extend({
     if (this.options.debug) this.options.silent = false
     if (!this.options.colorGridContour) this.options.colorGridContour = (this.options.debug) ? this.options.colorDebug : '#fff'
 
+    // init progress bar
+    this._progressBar = document.createElement('div')
+    this._progressBar.id = 'progressBar'
+    document.getElementsByTagName('body')[0].appendChild(this._progressBar)
+    this._progress(100)
+
     // choose renderer
     if (this.options.renderer.toLowerCase() == 'svg') {
       this._addRender = this._addSVG
@@ -64,7 +72,12 @@ L.ISEA3HLayer = L.Layer.extend({
   _error: function(message) {
     throw `[geogrid.js] ${message}`
   },
-  _debugStep: function(title) {
+  _progress: function(percent=100) {
+    this._progressBar.style.width = `${percent}%`
+    this._progressBar.className = (percent == 0 || percent >= 100) ? 'hidden' : ''
+  },
+  _debugStep: function(title, percent=null) {
+    if (percent !== null) this._progress(percent)
     if (!this.options.silent) {
       const t = (new Date()).getTime()
       if (this._debugTimestamp != null && this._debugTitle != null) this._log(this._debugTitle + ' (' + (t - this._debugTimestamp) + 'ms)')
@@ -73,6 +86,7 @@ L.ISEA3HLayer = L.Layer.extend({
     }
   },
   _debugFinished: function() {
+    this._progress(100)
     if (!this.options.silent) {
       if (this._debugTimestamp != null && this._debugTitle != null) this._log(this._debugTitle + ' (' + ((new Date()).getTime() - this._debugTimestamp) + 'ms)')
       this._debugTimestamp = null
@@ -83,7 +97,7 @@ L.ISEA3HLayer = L.Layer.extend({
     const t = this
 
     // download the data
-    this._debugStep('download data')
+    this._debugStep('download data', 5)
     if (this.options.url) {
       const b = this._dataBounds = this._map.getBounds().pad(this.options.bboxPad)
       const r = this._dataResolution = this.options.resolution(this._map.getZoom())
@@ -111,7 +125,7 @@ L.ISEA3HLayer = L.Layer.extend({
     if (this._cacheVertices === undefined) this._cacheVertices = {}
 
     // make data complete by repetition
-    this._debugStep('make data complete by repetition')
+    this._debugStep('make data complete by repetition', 10)
     const data = this._data = []
     const minLonN = Math.floor((this._map.getBounds().getWest() + 180) / 360)
     const maxLonN = Math.ceil((this._map.getBounds().getEast() - 180) / 360)
@@ -149,14 +163,14 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // load the data into a tree
-    this._debugStep('load data into tree')
+    this._debugStep('load data into tree', 15)
     const tree = VPTreeFactory.build(data, (d0, d1) => {
       return d0.latLng.distanceTo(d1.latLng)
     })
 
     // collect the data needed for a cell
     // in particular: find neighbours for the cells
-    this._debugStep('collect the data needed for a cell')
+    this._debugStep('collect the data needed for a cell', 20)
     const cells = {}
     for (let d of data) {
       const numberOfNeighboursToLookFor = d.isPentagon ? 5 : 6
@@ -172,7 +186,7 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // filter cells I
-    this._debugStep('filter cells I')
+    this._debugStep('filter cells I', 40)
     const cellsFiltered = []
     for (let id in cells) {
       const c = cells[id]
@@ -190,7 +204,7 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // compute angles and vertices
-    this._debugStep('compute angles and vertices')
+    this._debugStep('compute angles and vertices', 45)
     for (let c of cellsFiltered) {
       if (c.vertices !== undefined) continue
       // collect neighbours
@@ -224,7 +238,7 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // filter cells II
-    this._debugStep('filter cells II')
+    this._debugStep('filter cells II', 50)
     const cellsFiltered2 = []
     for (let c of cellsFiltered) {
       if (c.vertices !== undefined) cellsFiltered2.push(c)
@@ -245,15 +259,15 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // cache neighbours
-    this._debugStep('cache neighbours')
+    this._debugStep('cache neighbours', 55)
     for (let c of cellsFiltered2) this._cacheNeighbours[c.id] = c.neighbours
 
     // cache vertices
-    this._debugStep('cache vertices')
+    this._debugStep('cache vertices', 57.5)
     for (let c of cellsFiltered2) this._cacheVertices[c.id] = c.vertices
 
     // produce GeoJSON
-    this._debugStep('produce GeoJSON')
+    this._debugStep('produce GeoJSON', 60)
     const features = []
     for (let c of cellsFiltered2) {
       features.push({
@@ -311,7 +325,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._svg.remove()
   },
   _renderSVG: function(geoJSON) {
-    this._debugStep('visualize (SVG)')
+    this._debugStep('visualize (SVG)', 80)
     const t = this
     const projectPoint = (x, y) => {
       const point = t._map.latLngToLayerPoint(L.latLng(y, x))
@@ -330,7 +344,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._debugFinished()
   },
   _updateSVG: function(geoJSON) {
-    this._debugStep('visualize - update (SVG))')
+    this._debugStep('visualize - update (SVG))', 90)
     const t = this
     const projectPoint = function (x, y) {
       const point = t._map.latLngToLayerPoint(L.latLng(y, x))
@@ -363,7 +377,7 @@ L.ISEA3HLayer = L.Layer.extend({
       if (t._geoJSON == null || t._geoJSON.features == null) return
       // log
       const renderer = utils.getRenderer()
-      t._debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`)
+      t._debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`, 80)
       // collect utils
       const zoom = utils.getMap().getZoom()
       const container = utils.getContainer()

@@ -1,0 +1,17 @@
+#progressBar {
+  z-index: 999;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 1s ease-in-out, height .4s, visibility 0 linear 1.6s, width 1s ease-in-out;
+  background-color: #1e90ff;
+  box-shadow: 0 1px 4px #1e90ff;
+}
+#progressBar.hidden {
+  visibility: hidden;
+  height: 0;
+  opacity: 0;
+}
