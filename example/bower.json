@@ -1,0 +1,22 @@
+{
+  "name": "example",
+  "description": "example for geogrid.js",
+  "main": "index.js",
+  "authors": [
+    "Franz-Benjamin Mocnik <mocnik@uni-heidelberg.de>"
+  ],
+  "license": "GPL-3.0",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "vptree.js": "git://github.com/fpirsch/vptree.js",
+    "Leaflet.PixiOverlay": "git://github.com/manubb/Leaflet.PixiOverlay#^0.0.6"
+  }
+}
