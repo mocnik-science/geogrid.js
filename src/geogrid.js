@@ -90,9 +90,8 @@ L.ISEA3HLayer = L.Layer.extend({
           this._debugFinished()
           break
         case 'resultComputeCells':
-          this._data = d.data
-          this._geoJSON = d.geoJSON
-          this._visualizeData()
+          this._cells = d.cells
+          this._produceGeoJSON()
           break
       }
     })
@@ -171,18 +170,46 @@ L.ISEA3HLayer = L.Layer.extend({
       },
     })
   },
+  _produceGeoJSON: function() {
+    // produce GeoJSON
+    this._debugStep('produce GeoJSON', 65)
+    const features = []
+    for (let c of this._cells) {
+      if (c.vertices !== undefined) {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [c.vertices],
+          },
+          properties: {
+            value: c.value,
+          },
+        })
+      }
+    }
+    this._geoJSON = {
+      type: 'FeatureCollection',
+      features: features,
+    }
+    // visualize data
+    this._visualizeData()
+  },
   _visualizeData: function() {
     const t = this
     const geoJSON = this._geoJSON
     // visualize
     if (geoJSON.features.length) {
-      // visualize centers
-      if (t._centers != null) for (let c of t._centers) c.remove()
-      t._centers = []
-      if (t.options.debug) for (let d of t._data) {
-        const circle = L.circle([d.lat, d.lon], {color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, radius: 3}).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
-        circle._d = d
-        t._centers.push(circle)
+      // visualize centroids
+      if (t._centroids != null) for (let c of t._centroids) c.remove()
+      t._centroids = []
+      if (t.options.debug) {
+        this._debugStep('visualize centroids', 70)
+        for (let d of t._cells) {
+          const circle = L.circle([d.lat, d.lon], {color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, radius: 3}).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
+          circle._d = d
+          t._centroids.push(circle)
+        }
       }
       // visualize cells
       t._renderRender(geoJSON)
@@ -318,15 +345,11 @@ const isea3hWorker = () => {
     const d = e.data
     switch (d.task) {
       case 'computeCells':
-        const result = computeGeoJSON(d.json, d.bbox)
         postMessage({
           task: 'resultComputeCells',
-          geoJSON: result.geoJSON,
-          data: result.data,
+          cells: computeGeoJSON(d.json, d.bbox),
         })
-        break;
-      default:
-
+        break
     }
   }
 
@@ -408,31 +431,30 @@ const isea3hWorker = () => {
     }
 
     // filter cells I
+    // filter cells by location of neighbours
     debugStep('filter cells I', 40)
-    const cellsFiltered = []
     for (let id in cells) {
       const c = cells[id]
-      if (c.vertices !== undefined) {
-        cellsFiltered.push(c)
-        continue
-      }
+      if (c.vertices !== undefined) continue
       let numberOfMatchingNeighbours = 0
       for (let id2 of c.neighbours) {
         const c2 = cells[id2]
         if (Math.abs(c2.lat - c.lat) > 90 || Math.abs(c2.lon - c.lon) > 180) numberOfMatchingNeighbours = -100
         if (c2.neighbours.indexOf(id) >= 0) numberOfMatchingNeighbours++
       }
-      if (numberOfMatchingNeighbours >= (c.isPentagon ? 5 : 6)) cellsFiltered.push(c)
+      if (numberOfMatchingNeighbours >= (c.isPentagon ? 5 : 6)) continue
+      c.filtered = false
     }
 
     // compute angles and vertices
     debugStep('compute angles and vertices', 45)
-    for (let c of cellsFiltered) {
-      if (c.vertices !== undefined) continue
+    for (let id in cells) {
+      const c = cells[id]
+      if (c.filtered === false || c.vertices !== undefined) continue
       c.angles = []
       // compute angles
-      for (let id of c.neighbours) {
-        let n = cells[id]
+      for (let id2 of c.neighbours) {
+        let n = cells[id2]
         const ncLon = (n.lon - c.lon) * rad
         c.angles.push({
           angle: Math.atan2(Math.sin(ncLon) * n.cosLat, c.cosLat * n.sinLat - c.sinLat * n.cosLat * Math.cos(ncLon)),
@@ -452,11 +474,12 @@ const isea3hWorker = () => {
     }
 
     // filter cells II
+    // filter cells by their distortion
     debugStep('filter cells II', 50)
-    const cellsFiltered2 = []
-    for (let c of cellsFiltered) {
-      if (c.vertices !== undefined) cellsFiltered2.push(c)
-      else if (c.isPentagon) cellsFiltered2.push(c)
+    for (let id in cells) {
+      const c = cells[id]
+      if (c.filtered === false) continue
+      else if (c.isPentagon) continue
       else {
         let filter = true
         for (let i = 0; i < 6; i++) {
@@ -468,48 +491,36 @@ const isea3hWorker = () => {
             break
           }
         }
-        if (filter) cellsFiltered2.push(c)
+        if (!filter) c.filtered = false
       }
     }
 
     // cache neighbours
     debugStep('cache neighbours', 55)
-    for (let c of cellsFiltered2) cacheNeighbours[c.id] = c.neighbours
+    for (let id in cells) cacheNeighbours[id] = cells[id].neighbours
 
     // cache vertices
     debugStep('cache vertices', 57.5)
-    for (let c of cellsFiltered2) cacheVertices[c.id] = c.vertices
+    for (let id in cells) cacheVertices[id] = cells[id].vertices
 
-    // produce GeoJSON
-    debugStep('produce GeoJSON', 60)
-    const features = []
-    for (let c of cellsFiltered2) {
-      features.push({
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [c.vertices],
-        },
-        properties: {
-          value: c.value,
-        },
-      })
-    }
-    const geoJSON = {
-      type: 'FeatureCollection',
-      features: features,
+    // clean up data about cells
+    debugStep('clean up data about cells', 60)
+    const cells2 = new Array(cells.length)
+    let i = -1
+    for (let id in cells) {
+      i++
+      const c = cells[id]
+      cells2[i] = {
+        lat: c.lat,
+        lon: c.lon,
+        isPentagon: c.isPentagon,
+      }
+      if (c.filtered !== false) {
+        cells2[i].vertices = c.vertices
+        cells2[i].value = c.value
+      }
     }
 
-    // clean up data
-    for (let i = 0; i < data.length; i++) data[i] = {
-      lat: data[i].lat,
-      lon: data[i].lon,
-      isPentagon: data[i].isPentagon,
-    }
-
-    return {
-      geoJSON: geoJSON,
-      data: data,
-    }
+    return cells2
   }
 }
