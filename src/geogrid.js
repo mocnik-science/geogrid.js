@@ -18,7 +18,8 @@ L.ISEA3HLayer = L.Layer.extend({
       if (s <= 9) return 12
       return 14
     },
-    bboxPad: 1.4,
+    bboxViewPad: 1.1,
+    bboxDataPad: 1.4,
     colorGridFillData: d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00']),
     colorGridFillNoData: '#eee',
     colorGridContour: null,
@@ -154,14 +155,11 @@ L.ISEA3HLayer = L.Layer.extend({
   _updateData: function() {
     const t = this
 
-    // save bounds
-    const bounds = this._viewBounds = this._map.getBounds()
-
     // download the data
     this._debugStep('download data', 5)
     if (this.options.url) {
-      const b = this._dataBounds = bounds.pad(this.options.bboxPad)
-      const r = this._dataResolution = this.options.resolution(this._map.getZoom())
+      const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad)
+      const r = this._resolutionData = this.options.resolution(this._map.getZoom())
       const url = this.options.url
         .replace('{bbox}', b.toBBoxString())
         .replace('{resolution}', r)
@@ -173,19 +171,16 @@ L.ISEA3HLayer = L.Layer.extend({
     } else if (this.options.data) this._processData()
   },
   _processData: function() {
-    // save bounds
-    const bounds = this._viewBounds = this._map.getBounds()
-
     // call web worker
     this._webWorker.postMessage({
       task: 'computeCells',
       json: this.options.data,
       url: document.location.href,
       bbox: {
-        north: bounds.getNorth(),
-        south: bounds.getSouth(),
-        west: bounds.getWest(),
-        east: bounds.getEast(),
+        north: this._bboxData.getNorth(),
+        south: this._bboxData.getSouth(),
+        west: this._bboxData.getWest(),
+        east: this._bboxData.getEast(),
       },
     })
   },
@@ -214,6 +209,22 @@ L.ISEA3HLayer = L.Layer.extend({
     // visualize data
     this._visualizeData()
   },
+  _reduceGeoJSON: function() {
+    // save bounds and return cached GeoJSON in case of unchanged bounds
+    const b = this._map.getBounds().pad(this.options.bboxViewPad)
+    if (b.equals(this._bboxView)) return this._geoJSONreduced
+    this._bboxView = b
+
+    // reduce
+    this._debugStep('reduce GeoJSON for area', 70)
+    this._geoJSONreduced = {
+      type: 'FeatureCollection',
+      features: [],
+    }
+    for (let f of this._geoJSON.features) if (b.intersects(L.latLngBounds(f.geometry.coordinates[0].map(c => [c[1], c[0]])))) this._geoJSONreduced.features.push(f)
+
+    return this._geoJSONreduced
+  },
   _visualizeData: function() {
     const t = this
     const geoJSON = this._geoJSON
@@ -223,7 +234,7 @@ L.ISEA3HLayer = L.Layer.extend({
       if (t._centroids != null) for (let c of t._centroids) c.remove()
       t._centroids = []
       if (t.options.debug) {
-        this._debugStep('visualize centroids', 70)
+        this._debugStep('visualize centroids', 75)
         for (let d of t._cells) {
           const circle = L.circle([d.lat, d.lon], {color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, radius: 3}).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
           circle._d = d
@@ -231,13 +242,13 @@ L.ISEA3HLayer = L.Layer.extend({
         }
       }
       // visualize cells
-      t._renderRender(geoJSON)
+      this._renderRender(this._reduceGeoJSON())
     }
     // reset after zooming, etc.
     const reset = () => {
-      if (geoJSON.features.length) t._updateRender(geoJSON)
-      if ((!t._dataBounds.contains(t._map.getBounds())) || (t.options.resolution(t._map.getZoom()) !== t._dataResolution)) t._updateData()
-      else if (!this._viewBounds.contains(t._map.getBounds())) t._processData()
+      const geoJSONreduced = this._reduceGeoJSON()
+      if (geoJSON.features.length) t._updateRender(geoJSONreduced)
+      if ((!t._bboxData.contains(t._bboxView)) || (t.options.resolution(t._map.getZoom()) !== t._resolutionData)) t._updateData()
     }
     this._map.on('viewreset', reset)
     this._map.on('zoomend', reset)
