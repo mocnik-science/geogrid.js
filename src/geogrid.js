@@ -43,7 +43,6 @@ L.ISEA3HLayer = L.Layer.extend({
 
     // init progress bar
     this._progressBar = document.createElement('div')
-    this._progressBar.id = 'progressBar'
     this._progressBar.style.backgroundColor = this.options.colorProgressBar
     const backgroundColor = d3.color(this.options.colorProgressBar)
     backgroundColor.opacity = .7
@@ -112,8 +111,20 @@ L.ISEA3HLayer = L.Layer.extend({
     throw `[geogrid.js] ${message}`
   },
   _progress: function(percent=100) {
+    if (this._progresBarTimeoutReset !== undefined) {
+      clearTimeout(this._progresBarTimeoutReset)
+      this._progresBarTimeoutReset = undefined
+    }
+    if (0 < percent && percent < 100) this._progressBar.className = 'progressBar'
+    else {
+      this._progressBar.className = 'progressBarHidden'
+      this._progresBarTimeoutReset = setTimeout(() => {
+        this._progresBarTimeoutReset = undefined
+        this._progressBar.style.width = '0%'
+        this._progressBar.className = 'progressBarReset'
+      }, 700)
+    }
     this._progressBar.style.width = `${percent}%`
-    this._progressBar.className = (percent == 0 || percent >= 100) ? 'hidden' : ''
   },
   _debugStep: function(title, percent=null) {
     if (percent !== null) this._progress(percent)
@@ -338,7 +349,6 @@ const isea3hWorker = () => {
   const error = message => postMessage({task: 'error', message: message})
   const progress = percent => postMessage({task: 'progress', percent: percent})
   const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
-  const debugFinished = () => postMessage({task: 'debugFinished'})
 
   // message handler
   onmessage = e => {

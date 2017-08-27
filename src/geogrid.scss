@@ -1,4 +1,4 @@
-#progressBar {
+.progressBar {
   z-index: 999;
   position: absolute;
   top: 0;
@@ -6,11 +6,13 @@
   height: 3px;
   visibility: visible;
   opacity: 1;
-  transition: opacity 1s ease-in-out .4s, height .4s, visibility 0 linear, width .4s ease-in-out;
+  transition: height .3s ease-in .3s, width .4s ease-in-out;
 }
-#progressBar.hidden {
-  visibility: hidden;
+.progressBarReset {
+  @extend .progressBar;
+  transition: none;
+}
+.progressBarHidden {
+  @extend .progressBar;
   height: 0;
-  opacity: 0;
-  transition: opacity 1s ease-in-out, height 0, visibility 0 linear 1.6s, width .4s ease-in-out;
 }
