@@ -124,6 +124,7 @@ L.ISEA3HLayer = L.Layer.extend({
       clearTimeout(this._progresBarTimeoutReset)
       this._progresBarTimeoutReset = undefined
     }
+    if (this.noProgress) return
     if (0 < percent && percent < 100) this._progressBar.className = 'progressBar'
     else {
       this._progressBar.className = 'progressBarHidden'
@@ -134,6 +135,9 @@ L.ISEA3HLayer = L.Layer.extend({
       }, 700)
     }
     this._progressBar.style.width = `${percent}%`
+  },
+  _showProgress: function() {
+    this.noProgress = false
   },
   _debugStep: function(title, percent=null) {
     if (percent !== null) this._progress(percent)
@@ -151,11 +155,13 @@ L.ISEA3HLayer = L.Layer.extend({
       this._debugTimestamp = null
       this._debugTitle = null
     }
+    this.noProgress = true
   },
   _updateData: function() {
     const t = this
 
     // download the data
+    this._showProgress()
     this._debugStep('download data', 5)
     if (this.options.url) {
       const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad)
