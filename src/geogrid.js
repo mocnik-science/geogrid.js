@@ -500,6 +500,13 @@ const isea3hWorker = () => {
       features: features,
     }
 
+    // clean up data
+    for (let i = 0; i < data.length; i++) data[i] = {
+      lat: data[i].lat,
+      lon: data[i].lon,
+      isPentagon: data[i].isPentagon,
+    }
+
     return {
       geoJSON: geoJSON,
       data: data,
