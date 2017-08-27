@@ -23,6 +23,7 @@ L.ISEA3HLayer = L.Layer.extend({
     colorGridFillNoData: '#eee',
     colorGridContour: null,
     widthGridContour: 2,
+    colorProgressBar: '#ff5151',
     colorDebug: '#1e90ff',
     colorDebugEmphasized: '#f00',
     attribution: '&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>',
@@ -43,6 +44,10 @@ L.ISEA3HLayer = L.Layer.extend({
     // init progress bar
     this._progressBar = document.createElement('div')
     this._progressBar.id = 'progressBar'
+    this._progressBar.style.backgroundColor = this.options.colorProgressBar
+    const backgroundColor = d3.color(this.options.colorProgressBar)
+    backgroundColor.opacity = .7
+    this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
     document.getElementsByTagName('body')[0].appendChild(this._progressBar)
     this._progress(100)
 
@@ -192,8 +197,6 @@ L.ISEA3HLayer = L.Layer.extend({
     this._map.on('zoomend', reset)
     this._map.on('moveend', reset)
     reset()
-    // finished
-    this._debugFinished()
   },
   _addSVG: function(map) {
     this._svg = d3.select(this._map.getPanes().overlayPane).append('svg').attr('position', 'relative')
@@ -255,35 +258,37 @@ L.ISEA3HLayer = L.Layer.extend({
       if (t._geoJSON == null || t._geoJSON.features == null) return
       // log
       const renderer = utils.getRenderer()
-      t._debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`, 80)
+      t._debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`, 90)
       // collect utils
       const zoom = utils.getMap().getZoom()
       const container = utils.getContainer()
       const project = utils.latLngToLayerPoint
       const scale = utils.getScale()
-      // colors
-      const colorGridContour = pixiColor(t.options.colorGridContour)
-      const colorGridFillNoData = pixiColor(t.options.colorGridFillNoData)
-      const colorGridFillData = value => (value) ? pixiColor(t.options.colorGridFillData(value)) : colorGridFillNoData
-      // if new geoJSON, cleanup and initialize
-      if (t._geoJSON._webgl_initialized == null || prevZoom != zoom) {
-        t._geoJSON._webgl_initialized = true
-        pixiGraphics.clear()
-      }
-      // draw geoJSON features
-      for (let h of t._geoJSON.features) {
-        const notInitialized = (h._webgl_coordinates == null)
-        if (notInitialized) h._webgl_coordinates = h.geometry.coordinates[0].map(c => project([c[1], c[0]]))
-        if (notInitialized || prevZoom != zoom) {
-          pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
-          pixiGraphics.beginFill(colorGridFillData(h.properties.value), t.options.opacityGridFill)
-          pixiGraphics.drawPolygon([].concat(...h._webgl_coordinates.map(c => [c.x, c.y])))
-          pixiGraphics.endFill()
+      setTimeout(() => {
+        // colors
+        const colorGridContour = pixiColor(t.options.colorGridContour)
+        const colorGridFillNoData = pixiColor(t.options.colorGridFillNoData)
+        const colorGridFillData = value => (value) ? pixiColor(t.options.colorGridFillData(value)) : colorGridFillNoData
+        // if new geoJSON, cleanup and initialize
+        if (t._geoJSON._webgl_initialized == null || prevZoom != zoom) {
+          t._geoJSON._webgl_initialized = true
+          pixiGraphics.clear()
         }
-      }
-      prevZoom = zoom
-      renderer.render(container)
-      t._debugFinished()
+        // draw geoJSON features
+        for (let h of t._geoJSON.features) {
+          const notInitialized = (h._webgl_coordinates == null)
+          if (notInitialized) h._webgl_coordinates = h.geometry.coordinates[0].map(c => project([c[1], c[0]]))
+          if (notInitialized || prevZoom != zoom) {
+            pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
+            pixiGraphics.beginFill(colorGridFillData(h.properties.value), t.options.opacityGridFill)
+            pixiGraphics.drawPolygon([].concat(...h._webgl_coordinates.map(c => [c.x, c.y])))
+            pixiGraphics.endFill()
+          }
+        }
+        prevZoom = zoom
+        renderer.render(container)
+        t._debugFinished()
+      }, 1)
     }, pixiContainer).addTo(map)
   },
   _removeWebGL: function(map) {
