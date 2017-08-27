@@ -332,6 +332,7 @@ const isea3hWorker = () => {
 
   // constants
   const rad = Math.PI / 180
+  const radCircle = 2 * Math.PI
 
   // caches
   let cacheNeighbours = {}
@@ -428,23 +429,18 @@ const isea3hWorker = () => {
     debugStep('compute angles and vertices', 45)
     for (let c of cellsFiltered) {
       if (c.vertices !== undefined) continue
-      // collect neighbours
-      const ns = []
-      for (let id of c.neighbours) ns.push(cells[id])
-      // compute angles
       c.angles = []
-      const cLat = c.lat * rad
-      const cLon = c.lon * rad
-      for (let n of ns) {
-        const nLat = n.lat * rad
-        const nLon = n.lon * rad
+      // compute angles
+      for (let id of c.neighbours) {
+        let n = cells[id]
+        const ncLon = (n.lon - c.lon) * rad
         c.angles.push({
-          angle: Math.atan2(Math.sin(nLon - cLon) * n.cosLat, c.cosLat * Math.sin(nLat) - c.sinLat * n.cosLat * Math.cos(nLon - cLon)) / rad,
+          angle: Math.atan2(Math.sin(ncLon) * n.cosLat, c.cosLat * n.sinLat - c.sinLat * n.cosLat * Math.cos(ncLon)),
           lat: n.lat,
           lon: n.lon,
         })
       }
-      // sort by angles
+      // sort angles
       c.angles.sort((a, b) => (a.angle < b.angle) ? -1 : 1)
       // compute vertices
       c.vertices = []
@@ -464,9 +460,9 @@ const isea3hWorker = () => {
       else {
         let filter = true
         for (let i = 0; i < 6; i++) {
-          const aBefore = Math.abs((c.angles[(i + 2 < 6) ? i + 2 : i - 4].angle - c.angles[i].angle + 360) % 360 - 180)
-          const a = Math.abs((c.angles[(i + 3 < 6) ? i + 3 : i - 3].angle - c.angles[i].angle + 360) % 360 - 180)
-          const aAfter = Math.abs((c.angles[(i + 4 < 6) ? i + 4 : i - 2].angle - c.angles[i].angle + 360) % 360 - 180)
+          const aBefore = Math.abs((c.angles[(i + 2 < 6) ? i + 2 : i - 4].angle - c.angles[i].angle + radCircle) % radCircle - Math.PI)
+          const a = Math.abs((c.angles[(i + 3 < 6) ? i + 3 : i - 3].angle - c.angles[i].angle + radCircle) % radCircle - Math.PI)
+          const aAfter = Math.abs((c.angles[(i + 4 < 6) ? i + 4 : i - 2].angle - c.angles[i].angle + radCircle) % radCircle - Math.PI)
           if ((aBefore < a) || (aAfter < a)) {
             filter = false
             break
