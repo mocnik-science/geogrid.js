@@ -29,14 +29,22 @@ L.ISEA3HLayer = L.Layer.extend({
     attribution: '&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>',
     renderer: 'webgl',
     debug: false,
-    silent: false,
+    silent: true,
   },
   initialize: function(options) {
     // init options
     L.Util.setOptions(this, options)
-    if (this.options.bboxPad < 1) {
-      this._error('bboxPad must be larger than 1');
-      this.options.bboxPad = 1;
+    if (this.options.bboxViewPad < 1) {
+      this._error('bboxViewPad must be larger than 1')
+      this.options.bboxViewPad = 1
+    }
+    if (this.options.bboxDataPad < 1) {
+      this._error('bboxDataPad must be larger than 1')
+      this.options.bboxDataPad = 1
+    }
+    if (this.options.bboxDataPad < this.options.bboxViewPad) {
+      this._error('bboxDataPad must be larger or equal than bboxViewPad')
+      this.options.bboxDataPad = this.options.bboxViewPad
     }
     if (this.options.debug) this.options.silent = false
     if (!this.options.colorGridContour) this.options.colorGridContour = (this.options.debug) ? this.options.colorDebug : '#fff'
