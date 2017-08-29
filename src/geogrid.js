@@ -444,9 +444,7 @@ const isea3hWorker = () => {
 
     // load the data into a tree
     debugStep('load data into tree', 15)
-    const tree = VPTreeFactory.build(data, (d0, d1) => {
-      return Math.acos(Math.min(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1))
-    })
+    const tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Math.min(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
 
     // collect the data needed for a cell
     // in particular: find neighbours for the cells
