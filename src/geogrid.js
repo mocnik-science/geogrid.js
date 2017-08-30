@@ -454,7 +454,7 @@ const isea3hWorker = () => {
       const numberOfNeighboursToLookFor = d.isPentagon ? 5 : 6
       if (d.neighbours == undefined) {
         d.neighbours = []
-        for (let x of tree.search(d, 7 * repeatNumber).splice(1)) {
+        for (let x of tree.search(d, 6 * (repeatNumber + 1) + 1).splice(1)) {
           const n = data[x.i]
           if (n.id !== d.id && Math.abs(d.lon - n.lon) < 180) d.neighbours.push(n.idLong)
           if (d.neighbours.length >= numberOfNeighboursToLookFor) break
