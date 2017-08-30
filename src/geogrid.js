@@ -336,13 +336,13 @@ L.ISEA3HLayer = L.Layer.extend({
         if (t._geoJSON._webgl_initialized == null || prevZoom != zoom) {
           t._geoJSON._webgl_initialized = true
           pixiGraphics.clear()
+          pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
         }
         // draw geoJSON features
         for (let h of t._geoJSON.features) {
           const notInitialized = (h._webgl_coordinates == null)
           if (notInitialized) h._webgl_coordinates = h.geometry.coordinates[0].map(c => project([c[1], c[0]]))
           if (notInitialized || prevZoom != zoom) {
-            pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
             pixiGraphics.beginFill(colorGridFillData(h.properties.value), t.options.opacityGridFill)
             pixiGraphics.drawPolygon([].concat(...h._webgl_coordinates.map(c => [c.x, c.y])))
             pixiGraphics.endFill()
