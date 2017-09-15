@@ -5,6 +5,13 @@ require('./geogrid.scss')
 if (typeof L === 'undefined') throw '[geogrid.js] Leaflet needs to be loaded first'
 if (typeof d3 === 'undefined') throw '[geogrid.js] D3.js needs to be loaded first'
 
+/****** PLUGIN ******/
+class ISEA3HLayerPlugin {
+  onAdd(layer) {
+    this._layer = layer
+  }
+}
+
 /****** LAYER ******/
 L.ISEA3HLayer = L.Layer.extend({
   options: {
@@ -33,6 +40,8 @@ L.ISEA3HLayer = L.Layer.extend({
     silent: true,
   },
   initialize: function(options) {
+    this._initialized = false
+
     // init options
     L.Util.setOptions(this, options)
     if (this.options.bboxViewPad < 1) {
@@ -49,6 +58,9 @@ L.ISEA3HLayer = L.Layer.extend({
     }
     if (this.options.debug) this.options.silent = false
     if (!this.options.colorGridContour) this.options.colorGridContour = (this.options.debug) ? this.options.colorDebug : '#fff'
+
+    // init plugins
+    this._plugins = []
 
     // init progress bar
     this._progressBar = document.createElement('div')
@@ -101,6 +113,22 @@ L.ISEA3HLayer = L.Layer.extend({
           this._cells = d.cells
           this._produceGeoJSON()
           break
+        case 'resultPluginsHover':
+          var ePlugin = {
+            lat: d.lat,
+            lon: d.lon,
+            cell: d.cell,
+          }
+          for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
+          break
+        case 'resultPluginsClick':
+          var ePlugin = {
+            lat: d.lat,
+            lon: d.lon,
+            cell: d.cell,
+          }
+          for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
+          break
       }
     })
   },
@@ -108,10 +136,34 @@ L.ISEA3HLayer = L.Layer.extend({
     this._map = map
     this._addRender(map)
     this._updateData()
+
+    // plugins
+    this._map.on('mousemove', e => {
+      if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+        task: 'findCell',
+        taskResult: 'resultPluginsHover',
+        lat: e.latlng.lat,
+        lon: e.latlng.lng,
+      })
+    })
+    this._map.on('click', e => {
+      if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+        task: 'findCell',
+        taskResult: 'resultPluginsClick',
+        lat: e.latlng.lat,
+        lon: e.latlng.lng,
+      })
+    })
   },
   onRemove: function(map) {
     this.removeRender(map)
     this._webWorker.terminate()
+  },
+  addPlugin: function(plugin) {
+    plugin.onAdd(this)
+    this._plugins.push(plugin)
+    if (plugin.onHover !== undefined) this._pluginsOnHover = true
+    if (plugin.onClick !== undefined) this._pluginsOnClick = true
   },
   _log: function(message) {
     console.log(`[geogrid.js] ${message}`)
@@ -260,6 +312,8 @@ L.ISEA3HLayer = L.Layer.extend({
     this._map.on('zoomend', reset)
     this._map.on('moveend', reset)
     reset()
+    // layer has been initialized
+    this._initialized = true
   },
   _addSVG: function(map) {
     this._svg = d3.select(this._map.getPanes().overlayPane).append('svg').attr('position', 'relative')
@@ -385,6 +439,14 @@ const isea3hWorker = () => {
           cells: computeGeoJSON(d.json, d.bbox),
         })
         break
+      case 'findCell':
+        postMessage({
+          task: d.taskResult,
+          cell: findCell(d.lat, d.lon),
+          lat: d.lat,
+          lon: d.lon,
+        })
+        break
     }
   }
 
@@ -395,6 +457,8 @@ const isea3hWorker = () => {
   // caches
   let cacheNeighbours = {}
   let cacheVertices = {}
+  let data = null
+  let tree = null
 
   // compute GeoJSON
   const computeGeoJSON = (json, bbox) => {
@@ -403,7 +467,7 @@ const isea3hWorker = () => {
 
     // make data complete by repetition
     debugStep('make data complete by repetition', 10)
-    const data = []
+    data = []
     const minLonN = Math.floor((bbox.west + 180) / 360)
     const maxLonN = Math.ceil((bbox.east - 180) / 360)
     const west = bbox.west - 5
@@ -444,7 +508,7 @@ const isea3hWorker = () => {
 
     // load the data into a tree
     debugStep('load data into tree', 15)
-    const tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Math.min(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
+    tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Math.min(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
 
     // collect the data needed for a cell
     // in particular: find neighbours for the cells
@@ -555,5 +619,15 @@ const isea3hWorker = () => {
     }
 
     return cells2
+  }
+
+  // find cell for given coordinates
+  const findCell = (lat, lon) => {
+    for (let x of tree.search({
+      lat: lat,
+      lon: lon,
+      sinLat: Math.sin(lat * rad),
+      cosLat: Math.cos(lat * rad),
+    }, 1)) return data[x.i]
   }
 }
