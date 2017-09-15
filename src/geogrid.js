@@ -10,6 +10,17 @@ class ISEA3HLayerPlugin {
   onAdd(layer) {
     this._layer = layer
   }
+  render() {
+    this._layer._render()
+  }
+  setCellColor(id, value) {
+    if (value) this._layer._overwriteColor[id] = value
+    else delete this._layer._overwriteColor[id]
+  }
+  setCellSize(id, value) {
+    if (value) this._layer._overwriteSize[id] = value
+    else delete this._layer._overwriteSize[id]
+  }
 }
 
 /****** LAYER ******/
@@ -31,6 +42,8 @@ L.ISEA3HLayer = L.Layer.extend({
     colorGridFillNoData: '#eee',
     colorGridContour: null,
     widthGridContour: 2,
+    sizeGridData: () => 1,
+    sizeGridNoData: 1,
     colorProgressBar: '#ff5151',
     colorDebug: '#1e90ff',
     colorDebugEmphasized: '#f00',
@@ -61,6 +74,9 @@ L.ISEA3HLayer = L.Layer.extend({
 
     // init plugins
     this._plugins = []
+    this._hoveredCells = []
+    this._overwriteColor = {}
+    this._overwriteSize = {}
 
     // init progress bar
     this._progressBar = document.createElement('div')
@@ -114,15 +130,26 @@ L.ISEA3HLayer = L.Layer.extend({
           this._produceGeoJSON()
           break
         case 'resultPluginsHover':
-          var ePlugin = {
-            lat: d.lat,
-            lon: d.lon,
-            cell: d.cell,
+          if (!this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
+            const ePlugin = {
+              lat: d.lat,
+              lon: d.lon,
+              cell: d.cell,
+            }
+            for (const cell of this._hoveredCells) {
+              const ePlugin2 = {
+                lat: d.lat,
+                lon: d.lon,
+                cell: cell,
+              }
+              if (cell.idLong !== ePlugin.cell.idLong) for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin2)
+            }
+            this._hoveredCells = [d.cell]
+            for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
           }
-          for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
           break
         case 'resultPluginsClick':
-          var ePlugin = {
+          const ePlugin = {
             lat: d.lat,
             lon: d.lon,
             cell: d.cell,
@@ -145,6 +172,15 @@ L.ISEA3HLayer = L.Layer.extend({
         lat: e.latlng.lat,
         lon: e.latlng.lng,
       })
+    })
+    this._map.on('mouseout', e => {
+      for (const cell of this._hoveredCells) {
+        const ePlugin = {
+          cell: cell,
+        }
+        for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
+      }
+      this._hoveredCells = []
     })
     this._map.on('click', e => {
       if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
@@ -255,6 +291,7 @@ L.ISEA3HLayer = L.Layer.extend({
             coordinates: [c.vertices],
           },
           properties: {
+            id: c.id,
             value: c.value,
           },
         })
@@ -300,7 +337,7 @@ L.ISEA3HLayer = L.Layer.extend({
         }
       }
       // visualize cells
-      this._renderRender(this._reduceGeoJSON())
+      this._render()
     }
     // reset after zooming, etc.
     const reset = () => {
@@ -315,6 +352,21 @@ L.ISEA3HLayer = L.Layer.extend({
     // layer has been initialized
     this._initialized = true
   },
+  _colorForCell(id, value) {
+    if (id in this._overwriteColor) return this._overwriteColor[id]
+    return (value !== null) ? this.options.colorGridFillData(value) : this.options.colorGridFillNoData
+  },
+  _resizeCell(id, value, geometry) {
+    // compute relative size
+    const relativeSize = (id in this._overwriteSize) ? this._overwriteSize[id] : ((value !== null) ? this.options.sizeGridData(value) : this.options.sizeGridNoData)
+    if (relativeSize == 1) return geometry
+    // resize geometry
+    const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
+    return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
+  },
+  _render() {
+    this._renderRender(this._reduceGeoJSON())
+  },
   _addSVG: function(map) {
     this._svg = d3.select(this._map.getPanes().overlayPane).append('svg').attr('position', 'relative')
     this._g = this._svg.append('g').attr('class', 'leaflet-zoom-hide')
@@ -325,21 +377,15 @@ L.ISEA3HLayer = L.Layer.extend({
   _renderSVG: function(geoJSON) {
     this._debugStep('visualize (SVG)', 80)
     const t = this
-    const projectPoint = (x, y) => {
-      const point = t._map.latLngToLayerPoint(L.latLng(y, x))
-      this.stream.point(point.x, point.y)
-    }
-    const transform = d3.geoTransform({point: projectPoint})
-    const path = d3.geoPath(transform)
     this._g.selectAll('path').remove()
     this._visHexagons = this._g.selectAll('path')
       .data(geoJSON.features)
       .enter().append('path')
-        .attr('fill', feature => (feature.properties.value === null) ? t.options.colorGridFillNoData : t.options.colorGridFillData(feature.properties.value))
+        .attr('fill', feature => this._colorForCell(feature.properties.id, feature.properties.value))
         .attr('stroke', t.options.colorGridContour)
         .attr('stroke-width', t.options.widthGridContour)
         .attr('opacity', this.options.opacityGridFill)
-    this._debugFinished()
+    this._updateSVG(geoJSON)
   },
   _updateSVG: function(geoJSON) {
     this._debugStep('visualize - update (SVG))', 90)
@@ -357,7 +403,16 @@ L.ISEA3HLayer = L.Layer.extend({
       .style('left', bounds[0][0] + 'px')
       .style('top', bounds[0][1] + 'px')
     this._g.attr('transform', 'translate(' + -bounds[0][0] + ',' + -bounds[0][1] + ')')
-    this._visHexagons.attr('d', path)
+    this._visHexagons.attr('d', feature => path({
+      type: feature.type,
+      geometry: {
+        type: feature.geometry.type,
+        coordinates: [
+          this._resizeCell(feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
+        ],
+      },
+      properties: feature.properties,
+    }))
     this._debugFinished()
   },
   _addWebGL: function(map) {
@@ -370,6 +425,8 @@ L.ISEA3HLayer = L.Layer.extend({
     const pixiGraphics = new PIXI.Graphics()
     pixiContainer.addChild(pixiGraphics)
     let prevZoom
+    let prevOverwriteColor
+    let prevOverwriteSize
     this._webgl = L.pixiOverlay(utils => {
       // if no geoJSON present, do nothing
       if (t._geoJSON == null || t._geoJSON.features == null) return
@@ -384,25 +441,27 @@ L.ISEA3HLayer = L.Layer.extend({
       setTimeout(() => {
         // colors
         const colorGridContour = pixiColor(t.options.colorGridContour)
-        const colorGridFillNoData = pixiColor(t.options.colorGridFillNoData)
-        const colorGridFillData = value => (value) ? pixiColor(t.options.colorGridFillData(value)) : colorGridFillNoData
+        // check whether a referesh is need
+        const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
+        prevZoom = zoom
+        prevOverwriteColor = JSON.stringify(this._overwriteColor)
+        prevOverwriteSize = JSON.stringify(this._overwriteSize)
         // if new geoJSON, cleanup and initialize
-        if (t._geoJSON._webgl_initialized == null || prevZoom != zoom) {
+        if (t._geoJSON._webgl_initialized == null || needsRefresh) {
           t._geoJSON._webgl_initialized = true
           pixiGraphics.clear()
           pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
         }
         // draw geoJSON features
-        for (let h of t._geoJSON.features) {
-          const notInitialized = (h._webgl_coordinates == null)
-          if (notInitialized) h._webgl_coordinates = h.geometry.coordinates[0].map(c => project([c[1], c[0]]))
-          if (notInitialized || prevZoom != zoom) {
-            pixiGraphics.beginFill(colorGridFillData(h.properties.value), t.options.opacityGridFill)
-            pixiGraphics.drawPolygon([].concat(...h._webgl_coordinates.map(c => [c.x, c.y])))
+        for (const feature of t._geoJSON.features) {
+          const notInitialized = (feature._webgl_coordinates == null)
+          if (notInitialized) feature._webgl_coordinates = this._resizeCell(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
+          if (notInitialized || needsRefresh) {
+            pixiGraphics.beginFill(pixiColor(this._colorForCell(feature.properties.id, feature.properties.value)), t.options.opacityGridFill)
+            pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
             pixiGraphics.endFill()
           }
         }
-        prevZoom = zoom
         renderer.render(container)
         t._debugFinished()
       }, 1)
@@ -608,6 +667,7 @@ const isea3hWorker = () => {
       i++
       const c = cells[id]
       cells2[i] = {
+        id: c.id,
         lat: c.lat,
         lon: c.lon,
         isPentagon: c.isPentagon,

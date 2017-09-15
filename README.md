@@ -85,6 +85,8 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `colorGridFillNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
 | `colorGridContour` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
 | `widthGridContour` | `Number` | `2` | Width of the contour of a cell. |
+| `sizeGridData` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
+| `sizeGridNoData` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
@@ -106,16 +108,22 @@ The following plugins are available:
 
 ## Authoring Plugins
 
+### General Structure of a Plugin
+
 Plugins extend the class `ISEA3HLayerPlugin`.  Several methods exist that can be overwritten in order to react to certain events.  A plugin can, for example, be implemented as follows:
 
 ```javascript
 class TestPlugin extends ISEA3HLayerPlugin {
   onHover(e) {
-    console.debug(e.cell.id, e.cell.value)
+    console.debug('hover', e.cell.id, e.cell.value)
+  }
+  onUnhover(e) {
+    console.debug('unhover', e.cell.id, e.cell.value)
   }
   onClick(e) {
-    console.debug(e.cell.id, e.cell.value)
+    console.debug('click', e.cell.id, e.cell.value)
   }
+  ...
 }
 ```
 
@@ -124,6 +132,34 @@ In addition to a class, a factory method should be provided in order to simplify
 ```javascript
 L.testPlugin = () => new TestPlugin()
 ```
+
+### Events
+
+Plugins to the `ISEA3HLayer` follow the [paradigm of reactive programming](https://en.wikipedia.org/wiki/Reactive_programming): changes in the system that consists of the map and the user fire events of the plugin.  The corresponding method to an event is only executed, in case it is implemented.  The method `onHover` is, for example, executed when the `hover` event is fired.  If a corresponding method is not present, no error is thrown.  The following event listeners can be used:
+
+| Event listener | Description |
+| -------------- | ----------- |
+| `onHover` | the cursor hovers a cell |
+| `onUnhover` | the cursor moves out of a cell |
+| `onClick` | the user clicks on a cell |
+
+### Methods
+
+Plugins can react to events by performing an action as soon as an event is triggered.  Such an action can change the state of the `ISEA3HLayer`, or other parts of the website.  As an example, a cell can be drawn in `blue` colour when it is hovered by the courser:
+
+```javascript
+onHover(e) {
+  this.setCellColor(e.cell.id, 'blue')
+}
+```
+
+The following methods of the `ISEA3HLayerPlugin` are available:
+
+| Method | Description |
+| ------ | ----------- |
+| `setCellColor(id, color)` | Fills the grid cell with ID `id` by the colour `color`.  If `color` is `null`, the colour of the grid cell is computed using `colorGridFillData` and `colorGridFillNoData`. |
+| `setCellSize(id, size)` | Resizes the grid cell with ID `id` by the relative size `size`.  If `size` is `null`, the relative size of the grid cell is computed using `sizeGridData` and `sizeGridNoData`. |
+| `render()` | Forces the layer to render.  This method is to be used after having changed the color or the size of a grid cell, etc. |
 
 ## Build geogrid.min.js
 
