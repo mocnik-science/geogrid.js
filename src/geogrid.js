@@ -439,7 +439,7 @@ L.ISEA3HLayer = L.Layer.extend({
       const project = utils.latLngToLayerPoint
       const scale = utils.getScale()
       setTimeout(() => {
-        // colors
+        // colours
         const colorGridContour = pixiColor(t.options.colorGridContour)
         // check whether a referesh is need
         const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
@@ -514,7 +514,7 @@ const isea3hWorker = () => {
   const radCircle = 2 * Math.PI
 
   // caches
-  let cacheNeighbours = {}
+  let cacheNeighbors = {}
   let cacheVertices = {}
   let data = null
   let tree = null
@@ -560,7 +560,7 @@ const isea3hWorker = () => {
         value: d.value,
         lonN: i,
         isPentagon: isPentagon,
-        neighbours: cacheNeighbours[d.id],
+        neighbors: cacheNeighbors[d.id],
         vertices: cacheVertices[d.id],
       })
     }
@@ -574,13 +574,13 @@ const isea3hWorker = () => {
     debugStep('collect the data needed for a cell', 20)
     const cells = {}
     for (let d of data) {
-      const numberOfNeighboursToLookFor = d.isPentagon ? 5 : 6
-      if (d.neighbours == undefined) {
-        d.neighbours = []
+      const numberOfNeighborsToLookFor = d.isPentagon ? 5 : 6
+      if (d.neighbors == undefined) {
+        d.neighbors = []
         for (let x of tree.search(d, 6 * (repeatNumber + 1) + 1).splice(1)) {
           const n = data[x.i]
-          if (n.id !== d.id && Math.abs(d.lon - n.lon) < 180) d.neighbours.push(n.idLong)
-          if (d.neighbours.length >= numberOfNeighboursToLookFor) break
+          if (n.id !== d.id && Math.abs(d.lon - n.lon) < 180) d.neighbors.push(n.idLong)
+          if (d.neighbors.length >= numberOfNeighborsToLookFor) break
         }
       }
       cells[d.idLong] = d
@@ -592,13 +592,13 @@ const isea3hWorker = () => {
     for (let id in cells) {
       const c = cells[id]
       if (c.vertices !== undefined) continue
-      let numberOfMatchingNeighbours = 0
-      for (let id2 of c.neighbours) {
+      let numberOfMatchingNeighbors = 0
+      for (let id2 of c.neighbors) {
         const c2 = cells[id2]
-        if (Math.abs(c2.lat - c.lat) > 90 || Math.abs(c2.lon - c.lon) > 180) numberOfMatchingNeighbours = -100
-        if (c2.neighbours.indexOf(id) >= 0) numberOfMatchingNeighbours++
+        if (Math.abs(c2.lat - c.lat) > 90 || Math.abs(c2.lon - c.lon) > 180) numberOfMatchingNeighbors = -100
+        if (c2.neighbors.indexOf(id) >= 0) numberOfMatchingNeighbors++
       }
-      if (numberOfMatchingNeighbours >= (c.isPentagon ? 5 : 6)) continue
+      if (numberOfMatchingNeighbors >= (c.isPentagon ? 5 : 6)) continue
       c.filtered = false
     }
 
@@ -609,7 +609,7 @@ const isea3hWorker = () => {
       if (c.filtered === false || c.vertices !== undefined) continue
       c.angles = []
       // compute angles
-      for (let id2 of c.neighbours) {
+      for (let id2 of c.neighbors) {
         let n = cells[id2]
         const ncLon = (n.lon - c.lon) * rad
         c.angles.push({
@@ -653,7 +653,7 @@ const isea3hWorker = () => {
 
     // cache neighbours
     debugStep('cache neighbours', 55)
-    for (let id in cells) cacheNeighbours[id] = cells[id].neighbours
+    for (let id in cells) cacheNeighbors[id] = cells[id].neighbors
 
     // cache vertices
     debugStep('cache vertices', 57.5)
