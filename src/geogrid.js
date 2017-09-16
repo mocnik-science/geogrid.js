@@ -13,13 +13,16 @@ class ISEA3HLayerPlugin {
   render() {
     this._layer._render()
   }
-  setCellColor(id, value) {
-    if (value) this._layer._overwriteColor[id] = value
-    else delete this._layer._overwriteColor[id]
+  neighbors(cell, callback) {
+    return this._layer._neighbors(cell, callback)
   }
-  setCellSize(id, value) {
-    if (value) this._layer._overwriteSize[id] = value
-    else delete this._layer._overwriteSize[id]
+  setCellColor(cell, value) {
+    if (value) this._layer._overwriteColor[cell.id] = value
+    else delete this._layer._overwriteColor[cell.id]
+  }
+  setCellSize(cell, value) {
+    if (value) this._layer._overwriteSize[cell.id] = value
+    else delete this._layer._overwriteSize[cell.id]
   }
 }
 
@@ -74,6 +77,7 @@ L.ISEA3HLayer = L.Layer.extend({
 
     // init plugins
     this._plugins = []
+    this._pluginCallbacks = {}
     this._hoveredCells = []
     this._overwriteColor = {}
     this._overwriteSize = {}
@@ -155,6 +159,9 @@ L.ISEA3HLayer = L.Layer.extend({
             cell: d.cell,
           }
           for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
+          break
+        case 'resultFindNeighbors':
+          this._execPluginCallback(d.uid, d.neighbors)
           break
       }
     })
@@ -244,6 +251,29 @@ L.ISEA3HLayer = L.Layer.extend({
       this._debugTitle = null
     }
     this.noProgress = true
+  },
+  _uuidv4: function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8)
+      return v.toString(16)
+    })
+  },
+  _storePluginCallback: function(callback) {
+    const uid = this._uuidv4()
+    this._pluginCallbacks[uid] = callback
+    return uid
+  },
+  _execPluginCallback: function(uid, ...es) {
+    this._pluginCallbacks[uid](...es)
+    delete this._pluginCallbacks[uid]
+  },
+  _neighbors: function(cell, callback) {
+    this._webWorker.postMessage({
+      task: 'findNeighbors',
+      taskResult: 'resultFindNeighbors',
+      uid: this._storePluginCallback(callback),
+      idLong: cell.idLong,
+    })
   },
   _updateData: function() {
     const t = this
@@ -488,6 +518,21 @@ const isea3hWorker = () => {
   const progress = percent => postMessage({task: 'progress', percent: percent})
   const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
 
+  // helping function: clean up data about cells
+  const cleanupCell = c => {
+    const cell = {
+      id: c.id,
+      lat: c.lat,
+      lon: c.lon,
+      isPentagon: c.isPentagon,
+    }
+    if (c.filtered !== false) {
+      cell.vertices = c.vertices
+      cell.value = c.value
+    }
+    return cell
+  }
+
   // message handler
   onmessage = e => {
     const d = e.data
@@ -506,6 +551,13 @@ const isea3hWorker = () => {
           lon: d.lon,
         })
         break
+      case 'findNeighbors':
+        postMessage({
+          task: 'resultFindNeighbors',
+          uid: d.uid,
+          neighbors: findNeighbors(d.idLong),
+        })
+        break
     }
   }
 
@@ -517,6 +569,7 @@ const isea3hWorker = () => {
   let cacheNeighbors = {}
   let cacheVertices = {}
   let data = null
+  let cells = null
   let tree = null
 
   // compute GeoJSON
@@ -572,7 +625,7 @@ const isea3hWorker = () => {
     // collect the data needed for a cell
     // in particular: find neighbours for the cells
     debugStep('collect the data needed for a cell', 20)
-    const cells = {}
+    cells = {}
     for (let d of data) {
       const numberOfNeighborsToLookFor = d.isPentagon ? 5 : 6
       if (d.neighbors == undefined) {
@@ -665,17 +718,7 @@ const isea3hWorker = () => {
     let i = -1
     for (let id in cells) {
       i++
-      const c = cells[id]
-      cells2[i] = {
-        id: c.id,
-        lat: c.lat,
-        lon: c.lon,
-        isPentagon: c.isPentagon,
-      }
-      if (c.filtered !== false) {
-        cells2[i].vertices = c.vertices
-        cells2[i].value = c.value
-      }
+      cells2[i] = cleanupCell(cells[id])
     }
 
     return cells2
@@ -690,4 +733,7 @@ const isea3hWorker = () => {
       cosLat: Math.cos(lat * rad),
     }, 1)) return data[x.i]
   }
+
+  // find neighbors of a given cell
+  const findNeighbors = idLong => cacheNeighbors[idLong].map(idLong2 => cleanupCell(cells[idLong2]))
 }

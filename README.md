@@ -149,7 +149,16 @@ Plugins can react to events by performing an action as soon as an event is trigg
 
 ```javascript
 onHover(e) {
-  this.setCellColor(e.cell.id, 'blue')
+  this.setCellColor(e.cell, 'blue')
+}
+```
+
+Some of the functions except a callback as parameter because the result is computed asynchronously:
+```javascript
+onHover(e) {
+  this.neighbors(e.cell, cell => {
+    console.debug(cell)
+  })
 }
 ```
 
@@ -157,8 +166,9 @@ The following methods of the `ISEA3HLayerPlugin` are available:
 
 | Method | Description |
 | ------ | ----------- |
-| `setCellColor(id, color)` | Fills the grid cell with ID `id` by the colour `color`.  If `color` is `null`, the colour of the grid cell is computed using `colorGridFillData` and `colorGridFillNoData`. |
-| `setCellSize(id, size)` | Resizes the grid cell with ID `id` by the relative size `size`.  If `size` is `null`, the relative size of the grid cell is computed using `sizeGridData` and `sizeGridNoData`. |
+| `neighbors(cell, callback)` | Computes the direct neighbours of the grid cell `cell`.  The function `callback` is called with the list of neighbouring cells as an argument. |
+| `setCellColor(cell, color)` | Fills the grid cell `cell` by the colour `color`.  If `color` is `null`, the colour of the grid cell is computed using `colorGridFillData` and `colorGridFillNoData`. |
+| `setCellSize(id, size)` | Resizes the grid cell `cell` by the relative size `size`.  If `size` is `null`, the relative size of the grid cell is computed using `sizeGridData` and `sizeGridNoData`. |
 | `render()` | Forces the layer to render.  This method is to be used after having changed the color or the size of a grid cell, etc. |
 
 ## Build geogrid.min.js
