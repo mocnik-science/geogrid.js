@@ -81,8 +81,8 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `cellFillColorData` | `Function` | `d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00'])` | Function that returns, for a given value for a grid cell, the colour which should be used to fill the cell. |
 | `cellFillColorNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
 | `cellFillOpacity` | `Number` | `.5` | Opacity of the fill colour of the grid cells. |
-| `cellSizeData` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
-| `cellSizeNoData` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellSizeData` | `Function` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellSizeNoData` | `Number` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
 | `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
 | `cellContourWidth` | `Number` | `2` | Width of the contour of a cell. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
