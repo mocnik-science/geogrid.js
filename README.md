@@ -77,12 +77,10 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `data` | `Array` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
 | `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
 | `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
-| `opacityGridFill` | `Number` | `.5` | Opacity of the fill colour of the grid cells. |
 | `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
-| `bboxViewPad` | `Number` | `1.1` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
-| `bboxDataPad` | `Number` | `1.1` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `cellFillColorData` | `Function` | `d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00'])` | Function that returns, for a given value for a grid cell, the colour which should be used to fill the cell. |
 | `cellFillColorNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
+| `cellFillOpacity` | `Number` | `.5` | Opacity of the fill colour of the grid cells. |
 | `cellSizeData` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
 | `cellSizeNoData` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
 | `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
@@ -91,6 +89,8 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
 | `attribution` | `String` | `'&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>'` | Attribution to be shown. |
+| `bboxViewPad` | `Number` | `1.1` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
+| `bboxDataPad` | `Number` | `1.1` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `renderer` | `'webgl'|'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
 
 ## Plugins

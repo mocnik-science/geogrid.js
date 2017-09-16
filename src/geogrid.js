@@ -29,9 +29,10 @@ class ISEA3HLayerPlugin {
 /****** LAYER ******/
 L.ISEA3HLayer = L.Layer.extend({
   options: {
-    data: null,
     url: null,
-    opacityGridFill: .5,
+    data: null,
+    silent: true,
+    debug: false,
     resolution: s => {
       if (s <= 3) return 4
       if (s <= 5) return 6
@@ -39,10 +40,9 @@ L.ISEA3HLayer = L.Layer.extend({
       if (s <= 9) return 12
       return 14
     },
-    bboxViewPad: 1.1,
-    bboxDataPad: 1.4,
     cellFillColorData: d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00']),
     cellFillColorNoData: '#eee',
+    cellFillOpacity: .5,
     cellSizeData: () => 1,
     cellSizeNoData: 1,
     cellContourColor: null,
@@ -51,15 +51,17 @@ L.ISEA3HLayer = L.Layer.extend({
     colorDebug: '#1e90ff',
     colorDebugEmphasized: '#f00',
     attribution: '&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>',
+    bboxViewPad: 1.1,
+    bboxDataPad: 1.4,
     renderer: 'webgl',
-    debug: false,
-    silent: true,
   },
   initialize: function(options) {
     this._initialized = false
 
     // init options
     L.Util.setOptions(this, options)
+    if (this.options.debug) this.options.silent = false
+    if (!this.options.cellContourColor) this.options.cellContourColor = (this.options.debug) ? this.options.colorDebug : '#fff'
     if (this.options.bboxViewPad < 1) {
       this._error('bboxViewPad must be larger than 1')
       this.options.bboxViewPad = 1
@@ -72,8 +74,6 @@ L.ISEA3HLayer = L.Layer.extend({
       this._error('bboxDataPad must be larger or equal than bboxViewPad')
       this.options.bboxDataPad = this.options.bboxViewPad
     }
-    if (this.options.debug) this.options.silent = false
-    if (!this.options.cellContourColor) this.options.cellContourColor = (this.options.debug) ? this.options.colorDebug : '#fff'
 
     // init plugins
     this._plugins = []
@@ -414,7 +414,7 @@ L.ISEA3HLayer = L.Layer.extend({
         .attr('fill', feature => this._colorForCell(feature.properties.id, feature.properties.value))
         .attr('stroke', t.options.cellContourColor)
         .attr('stroke-width', t.options.cellContourWidth)
-        .attr('opacity', this.options.opacityGridFill)
+        .attr('opacity', this.options.cellFillOpacity)
     this._updateSVG(geoJSON)
   },
   _updateSVG: function(geoJSON) {
@@ -487,7 +487,7 @@ L.ISEA3HLayer = L.Layer.extend({
           const notInitialized = (feature._webgl_coordinates == null)
           if (notInitialized) feature._webgl_coordinates = this._resizeCell(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
           if (notInitialized || needsRefresh) {
-            pixiGraphics.beginFill(pixiColor(this._colorForCell(feature.properties.id, feature.properties.value)), t.options.opacityGridFill)
+            pixiGraphics.beginFill(pixiColor(this._colorForCell(feature.properties.id, feature.properties.value)), t.options.cellFillOpacity)
             pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
             pixiGraphics.endFill()
           }
