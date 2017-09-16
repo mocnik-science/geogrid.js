@@ -81,12 +81,12 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
 | `bboxViewPad` | `Number` | `1.1` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.1` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
-| `colorGridFillData` | `Function` | `d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00'])` | Function that returns, for a given value for a grid cell, the colour which should be used to fill the cell. |
-| `colorGridFillNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
-| `colorGridContour` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
-| `widthGridContour` | `Number` | `2` | Width of the contour of a cell. |
-| `sizeGridData` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
-| `sizeGridNoData` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellFillColorData` | `Function` | `d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00'])` | Function that returns, for a given value for a grid cell, the colour which should be used to fill the cell. |
+| `cellFillColorNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
+| `cellSizeData` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellSizeNoData` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
+| `cellContourWidth` | `Number` | `2` | Width of the contour of a cell. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |

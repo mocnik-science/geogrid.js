@@ -41,12 +41,12 @@ L.ISEA3HLayer = L.Layer.extend({
     },
     bboxViewPad: 1.1,
     bboxDataPad: 1.4,
-    colorGridFillData: d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00']),
-    colorGridFillNoData: '#eee',
-    colorGridContour: null,
-    widthGridContour: 2,
-    sizeGridData: () => 1,
-    sizeGridNoData: 1,
+    cellFillColorData: d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00']),
+    cellFillColorNoData: '#eee',
+    cellSizeData: () => 1,
+    cellSizeNoData: 1,
+    cellContourColor: null,
+    cellContourWidth: 2,
     colorProgressBar: '#ff5151',
     colorDebug: '#1e90ff',
     colorDebugEmphasized: '#f00',
@@ -73,7 +73,7 @@ L.ISEA3HLayer = L.Layer.extend({
       this.options.bboxDataPad = this.options.bboxViewPad
     }
     if (this.options.debug) this.options.silent = false
-    if (!this.options.colorGridContour) this.options.colorGridContour = (this.options.debug) ? this.options.colorDebug : '#fff'
+    if (!this.options.cellContourColor) this.options.cellContourColor = (this.options.debug) ? this.options.colorDebug : '#fff'
 
     // init plugins
     this._plugins = []
@@ -384,11 +384,11 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _colorForCell(id, value) {
     if (id in this._overwriteColor) return this._overwriteColor[id]
-    return (value !== null) ? this.options.colorGridFillData(value) : this.options.colorGridFillNoData
+    return (value !== null) ? this.options.cellFillColorData(value) : this.options.cellFillColorNoData
   },
   _resizeCell(id, value, geometry) {
     // compute relative size
-    const relativeSize = (id in this._overwriteSize) ? this._overwriteSize[id] : ((value !== null) ? this.options.sizeGridData(value) : this.options.sizeGridNoData)
+    const relativeSize = (id in this._overwriteSize) ? this._overwriteSize[id] : ((value !== null) ? this.options.cellSizeData(value) : this.options.cellSizeNoData)
     if (relativeSize == 1) return geometry
     // resize geometry
     const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
@@ -412,8 +412,8 @@ L.ISEA3HLayer = L.Layer.extend({
       .data(geoJSON.features)
       .enter().append('path')
         .attr('fill', feature => this._colorForCell(feature.properties.id, feature.properties.value))
-        .attr('stroke', t.options.colorGridContour)
-        .attr('stroke-width', t.options.widthGridContour)
+        .attr('stroke', t.options.cellContourColor)
+        .attr('stroke-width', t.options.cellContourWidth)
         .attr('opacity', this.options.opacityGridFill)
     this._updateSVG(geoJSON)
   },
@@ -470,7 +470,7 @@ L.ISEA3HLayer = L.Layer.extend({
       const scale = utils.getScale()
       setTimeout(() => {
         // colours
-        const colorGridContour = pixiColor(t.options.colorGridContour)
+        const cellContourColor = pixiColor(t.options.cellContourColor)
         // check whether a referesh is need
         const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
         prevZoom = zoom
@@ -480,7 +480,7 @@ L.ISEA3HLayer = L.Layer.extend({
         if (t._geoJSON._webgl_initialized == null || needsRefresh) {
           t._geoJSON._webgl_initialized = true
           pixiGraphics.clear()
-          pixiGraphics.lineStyle(t.options.widthGridContour / scale, colorGridContour, 1)
+          pixiGraphics.lineStyle(t.options.cellContourWidth / scale, cellContourColor, 1)
         }
         // draw geoJSON features
         for (const feature of t._geoJSON.features) {
