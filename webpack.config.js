@@ -8,7 +8,6 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'geogrid.min.js',
   },
-//  devtool: 'source-map',
   module: {
     loaders: [{
       test: /\.js$/,
