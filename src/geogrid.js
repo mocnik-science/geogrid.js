@@ -133,9 +133,6 @@ L.ISEA3HLayer = L.Layer.extend({
         case 'log':
           this._log(d.message)
           break
-        case 'error':
-          this._error(d.message)
-          break
         case 'progress':
           this._progress(d.percent)
           break
@@ -572,7 +569,7 @@ const isea3hWorker = () => {
 
   // helping functions
   const log = message => postMessage({task: 'log', message: message})
-  const error = message => postMessage({task: 'error', message: message})
+  const error = message => {throw message}
   const progress = percent => postMessage({task: 'progress', percent: percent})
   const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
 
@@ -632,6 +629,7 @@ const isea3hWorker = () => {
   // compute GeoJSON
   const computeGeoJSON = (json, bbox) => {
     // handle errors
+    if (json == null) error('data error - no data')
     if (json.error) error(`data error - ${json.message}`)
 
     // get properties to copy
