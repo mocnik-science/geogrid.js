@@ -40,11 +40,19 @@ L.ISEA3HLayer = L.Layer.extend({
       if (s <= 9) return 12
       return 14
     },
-    cellFillColorData: d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00']),
-    cellFillColorNoData: '#eee',
-    cellFillOpacity: .5,
-    cellSizeData: () => 1,
-    cellSizeNoData: 1,
+    cellColorKey: 'value',
+    cellColorMin: 0,
+    cellColorMax: null,
+    cellColorScale: (min, max) => d3.scaleLinear().domain([min, max]).range(['#fff', '#f00']),
+    cellColorNoData: '#eee',
+    cellColorNoKey: '#f00',
+    cellColorOpacity: .5,
+    cellSizeKey: null,
+    cellSizeMin: 0,
+    cellSizeMax: null,
+    cellSizeScale: (min, max) => {return value => (value - min) / (max - min)},
+    cellSizeNoData: 0,
+    cellSizeNoKey: 1,
     cellContourColor: null,
     cellContourWidth: 2,
     colorProgressBar: '#ff5151',
@@ -74,6 +82,8 @@ L.ISEA3HLayer = L.Layer.extend({
       this._error('bboxDataPad must be larger or equal than bboxViewPad')
       this.options.bboxDataPad = this.options.bboxViewPad
     }
+    this._cellColorScale = null
+    this._cellSizeScale = null
 
     // init plugins
     this._plugins = []
@@ -295,6 +305,9 @@ L.ISEA3HLayer = L.Layer.extend({
     } else if (this.options.data) this._processData()
   },
   _processData: function() {
+    // update scales
+    this._updateScales()
+
     // call web worker
     this._webWorker.postMessage({
       task: 'computeCells',
@@ -312,18 +325,18 @@ L.ISEA3HLayer = L.Layer.extend({
     // produce GeoJSON
     this._debugStep('produce GeoJSON', 65)
     const features = []
+    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._cells[0]).filter(k => !(k in ['lat', 'lon', 'isPentagon'])) : []
     for (let c of this._cells) {
       if (c.vertices !== undefined) {
+        const properties = {}
+        for (const k of keysToCopy) properties[k] = c[k]
         features.push({
           type: 'Feature',
           geometry: {
             type: 'Polygon',
             coordinates: [c.vertices],
           },
-          properties: {
-            id: c.id,
-            value: c.value,
-          },
+          properties: properties,
         })
       }
     }
@@ -361,7 +374,11 @@ L.ISEA3HLayer = L.Layer.extend({
       if (t.options.debug) {
         this._debugStep('visualize centroids', 75)
         for (let d of t._cells) {
-          const circle = L.circle([d.lat, d.lon], {color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug, radius: 3}).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
+          const circle = L.circle([d.lat, d.lon], {
+            color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
+            fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
+            radius: 3}
+          ).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
           circle._d = d
           t._centroids.push(circle)
         }
@@ -382,13 +399,51 @@ L.ISEA3HLayer = L.Layer.extend({
     // layer has been initialized
     this._initialized = true
   },
-  _colorForCell(id, value) {
-    if (id in this._overwriteColor) return this._overwriteColor[id]
-    return (value !== null) ? this.options.cellFillColorData(value) : this.options.cellFillColorNoData
+  _updateScales() {
+    const t = this
+    const computeScale = (scale, min, max, value) => {
+      if (value == null) return null
+      if (scale.length != 2) return scale
+      let values = Object.values(t.options.data.data).map(x => x[value]).filter(x => x !== null)
+      if (values.length == 0) values = [0]
+      const minComputed = (min) ? min : Math.min(...values)
+      const maxComputed = (max) ? max : Math.max(...values)
+      return scale(minComputed, maxComputed)
+    }
+    this._cellColorScale = computeScale(this.options.cellColorScale, this.options.cellColorMin, this.options.cellColorMax, this.options.cellColorKey)
+    this._cellSizeScale = computeScale(this.options.cellSizeScale, this.options.cellSizeMin, this.options.cellSizeMax, this.options.cellSizeKey)
   },
-  _resizeCell(id, value, geometry) {
-    // compute relative size
-    const relativeSize = (id in this._overwriteSize) ? this._overwriteSize[id] : ((value !== null) ? this.options.cellSizeData(value) : this.options.cellSizeNoData)
+  _cellColor(id, properties) {
+    // return overwritten colour
+    if (id in this._overwriteColor) return this._overwriteColor[id]
+    // no key
+    if (this.options.cellColorKey == null) return this.options.cellColorNoKey
+    // compute value
+    const value = properties[this.options.cellColorKey]
+    // return if empty value
+    if (value == null) return this.options.cellColorNoData
+    // return if no scale
+    if (this._cellColorScale == null) return this.options.cellColorNoKey
+    // compute colour
+    return this._cellColorScale(value)
+  },
+  _cellSize(id, properties, geometry) {
+    let relativeSize
+    // choose overwritten relative size
+    if (id in this._overwriteSize) relativeSize = this._overwriteSize[id]
+    // no key
+    else if (this.options.cellSizeKey == null) relativeSize = this.options.cellSizeNoKey
+    else {
+      // compute value
+      const value = properties[this.options.cellSizeKey]
+      // empty value
+      if (value == null) relativeSize = this.options.cellSizeNoData
+      // no scale
+      else if (this._cellSizeScale == null) relativeSize = this.options.cellSizeNoKey
+      // compute relative size
+      else relativeSize = this._cellSizeScale(value)
+    }
+    // if no resize needed, return geometry
     if (relativeSize == 1) return geometry
     // resize geometry
     const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
@@ -411,10 +466,10 @@ L.ISEA3HLayer = L.Layer.extend({
     this._visHexagons = this._g.selectAll('path')
       .data(geoJSON.features)
       .enter().append('path')
-        .attr('fill', feature => this._colorForCell(feature.properties.id, feature.properties.value))
+        .attr('fill', feature => t._cellColor(feature.properties.id, feature.properties))
         .attr('stroke', t.options.cellContourColor)
         .attr('stroke-width', t.options.cellContourWidth)
-        .attr('opacity', this.options.cellFillOpacity)
+        .attr('opacity', this.options.cellColorOpacity)
     this._updateSVG(geoJSON)
   },
   _updateSVG: function(geoJSON) {
@@ -438,7 +493,7 @@ L.ISEA3HLayer = L.Layer.extend({
       geometry: {
         type: feature.geometry.type,
         coordinates: [
-          this._resizeCell(feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
+          t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
         ],
       },
       properties: feature.properties,
@@ -485,9 +540,9 @@ L.ISEA3HLayer = L.Layer.extend({
         // draw geoJSON features
         for (const feature of t._geoJSON.features) {
           const notInitialized = (feature._webgl_coordinates == null)
-          if (notInitialized) feature._webgl_coordinates = this._resizeCell(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
+          if (notInitialized) feature._webgl_coordinates = t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
           if (notInitialized || needsRefresh) {
-            pixiGraphics.beginFill(pixiColor(this._colorForCell(feature.properties.id, feature.properties.value)), t.options.cellFillOpacity)
+            pixiGraphics.beginFill(pixiColor(t._cellColor(feature.properties.id, feature.properties)), t.options.cellColorOpacity)
             pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
             pixiGraphics.endFill()
           }
@@ -517,21 +572,6 @@ const isea3hWorker = () => {
   const error = message => postMessage({task: 'error', message: message})
   const progress = percent => postMessage({task: 'progress', percent: percent})
   const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
-
-  // helping function: clean up data about cells
-  const cleanupCell = c => {
-    const cell = {
-      id: c.id,
-      lat: c.lat,
-      lon: c.lon,
-      isPentagon: c.isPentagon,
-    }
-    if (c.filtered !== false) {
-      cell.vertices = c.vertices
-      cell.value = c.value
-    }
-    return cell
-  }
 
   // message handler
   onmessage = e => {
@@ -568,14 +608,31 @@ const isea3hWorker = () => {
   // caches
   let cacheNeighbors = {}
   let cacheVertices = {}
+  let keysToCopy = []
   let data = null
   let cells = null
   let tree = null
+
+  // helping function: clean up data about cells
+  const cleanupCell = c => {
+    const cell = {
+      id: c.id,
+      lat: c.lat,
+      lon: c.lon,
+      isPentagon: c.isPentagon,
+    }
+    if (c.filtered !== false) cell.vertices = c.vertices
+    for (k of keysToCopy) cell[k] = c[k]
+    return cell
+  }
 
   // compute GeoJSON
   const computeGeoJSON = (json, bbox) => {
     // handle errors
     if (json.error) error(`data error - ${json.message}`)
+
+    // get properties to copy
+    keysToCopy = (json.data.length > 0) ? Object.keys(json.data[0]).filter(k => !(k in ['lat', 'lon'])) : []
 
     // make data complete by repetition
     debugStep('make data complete by repetition', 10)
@@ -603,24 +660,27 @@ const isea3hWorker = () => {
         if (partB >= 40) lon *= -1
       }
       const lonNew = lon + i * 360
-      if (west <= lonNew && lonNew <= east) data.push({
-        id: d.id,
-        idLong: d.id + "_" + i,
-        lat: lat,
-        lon: lonNew,
-        sinLat: Math.sin(lat * rad),
-        cosLat: Math.cos(lat * rad),
-        value: d.value,
-        lonN: i,
-        isPentagon: isPentagon,
-        neighbors: cacheNeighbors[d.id],
-        vertices: cacheVertices[d.id],
-      })
+      if (west <= lonNew && lonNew <= east) {
+        dNew = {
+          idLong: d.id + "_" + i,
+          lat: lat,
+          lon: lonNew,
+          sinLat: Math.sin(lat * rad),
+          cosLat: Math.cos(lat * rad),
+          lonN: i,
+          isPentagon: isPentagon,
+          neighbors: cacheNeighbors[d.id],
+          vertices: cacheVertices[d.id],
+        }
+        for (k of keysToCopy) dNew[k] = d[k]
+        data.push(dNew)
+      }
     }
 
     // load the data into a tree
     debugStep('load data into tree', 15)
-    tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Math.min(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
+    const Mathmin = (a, b) => (a < b) ? a : b
+    tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Mathmin(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
 
     // collect the data needed for a cell
     // in particular: find neighbours for the cells
@@ -642,17 +702,12 @@ const isea3hWorker = () => {
     // filter cells I
     // filter cells by location of neighbours
     debugStep('filter cells I', 40)
-    for (let id in cells) {
+    for (const id in cells) {
       const c = cells[id]
       if (c.vertices !== undefined) continue
       let numberOfMatchingNeighbors = 0
-      for (let id2 of c.neighbors) {
-        const c2 = cells[id2]
-        if (Math.abs(c2.lat - c.lat) > 90 || Math.abs(c2.lon - c.lon) > 180) numberOfMatchingNeighbors = -100
-        if (c2.neighbors.indexOf(id) >= 0) numberOfMatchingNeighbors++
-      }
-      if (numberOfMatchingNeighbors >= (c.isPentagon ? 5 : 6)) continue
-      c.filtered = false
+      for (let id2 of c.neighbors) if (cells[id2].neighbors.indexOf(id) >= 0) numberOfMatchingNeighbors++
+      if (numberOfMatchingNeighbors < (c.isPentagon ? 5 : 6)) c.filtered = false
     }
 
     // compute angles and vertices

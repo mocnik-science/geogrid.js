@@ -69,7 +69,27 @@ Observe that the example presumes a local instance of [Measures REST](https://gi
 
 ## Options
 
-The `ISEA3HLayer` accepts several options, which are explained in the following:
+The `ISEA3HLayer` accepts several options, which allow to easily adapt the layer to the data source and the visualization needs.  Instead of depicting representing the value related to a grid cell by the colour, the value can also be encoded by the size of the grid cell:
+
+```javascript
+L.isea3hLayer({
+  url: '...',
+  cellColorKey: null,
+  cellSizeKey: 'value',
+})
+```
+
+Even two different values related to a grid cell can be represented, encoded by the colour and the size of the cell:
+
+```javascript
+L.isea3hLayer({
+  url: '...',
+  cellColorKey: 'value1',
+  cellSizeKey: 'value2',
+})
+```
+
+The following options are available:
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
@@ -78,11 +98,19 @@ The `ISEA3HLayer` accepts several options, which are explained in the following:
 | `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
 | `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
 | `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
-| `cellFillColorData` | `Function` | `d3.scaleLinear().domain([0, 3000000]).range(['#fff', '#f00'])` | Function that returns, for a given value for a grid cell, the colour which should be used to fill the cell. |
-| `cellFillColorNoData` | `String` | `'#eee'` | Colour to be used to fill a grid cell, when no data is available for this particular cell. |
-| `cellFillOpacity` | `Number` | `.5` | Opacity of the fill colour of the grid cells. |
-| `cellSizeData` | `Function` | `() => 1` | Function that returns, for a given value for a grid cell, the relative size of a grid cell. The default value (`1`) means that the cell has exactly its original size. |
-| `cellSizeNoData` | `Number` | `1` | Relative size of a grid cell, when no data is available for this particular cell. The default value (`1`) means that the cell has exactly its original size. |
+| `cellColorKey` | `String` | `value` | The colour to be used for a grid cell can be chosen in dependence of the property `cellColorKey` of the cell.  The colour is, accordingly, determined by computing the function `cellColorScale` with the property `cellColorKey` of the cell as argument.  If the option `cellColorKey` is `null`, the colour `cellColorNoKey` is used instead. |
+| `cellColorMin` | `Number` | `0` | Minimum value to be used in `cellColorScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
+| `cellColorMax` | `Number` | `null` | Maximum value to be used in `cellColorScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
+| `cellColorScale` | `Function` | `(min, max) => d3.scaleLinear().domain([min, max]).range(['#fff', '#f00'])` | This option is used to determine the colour to be used for a grid cell, when `cellColorKey` is not `null`.  This option is either (1) a function that returns, for a the property `cellColorKey` of the cell, the colour that should be used for the cell; or (2) a function that returns for given `min` and `max` values a function as in (1). |
+| `cellColorNoData` | `String` | `'#eee'` | Colour to be used for a grid cell, when no data is available for this particular cell. |
+| `cellColorNoKey` | `String` | `'#f00'` | Colour to be used for a grid cell, when `cellColorKey` is `null`. |
+| `cellColorOpacity` | `Number` | `.5` | Opacity of the colour to be used for the grid cells. |
+| `cellSizeKey` | `String` | `null` | The relative size of a grid cell can be chosen in dependence of the property `cellSizeKey` of the cell.  The relative size is, accordingly, determined by computing the function `cellSizeScale` with the property `cellSizeKey` of the cell as argument.  If the option `cellSizeKey` is `null`, the relative size `cellSizeNoKey` is used instead. |
+| `cellSizeMin` | `Number` | `0` | Minimum value to be used in `cellSizeScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
+| `cellSizeMax` | `Number` | `null` | Maximum value to be used in `cellSizeScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
+| `cellSizeScale` | `Function` | `(min, max) => {return value => (value - min) / (max - min)}` | This option is used to determine the relative size to be used for a grid cell, when `cellSizeKey` is not `null`.  This option is either (1) a function that returns, for a the property `cellSizeKey` of the cell, the relative size that should be used for the grid cell; or (2) a function that returns for given `min` and `max` values a function as in (1). |
+| `cellSizeNoData` | `Number` | `0` | Relative size to be used for a grid cell, when no data is available for this particular cell. |
+| `cellSizeNoKey` | `Number` | `1` | Relative size to be used for a grid cell, when `cellSizeKey` is `null`. |
 | `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
 | `cellContourWidth` | `Number` | `2` | Width of the contour of a cell. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
@@ -167,9 +195,9 @@ The following methods of the `ISEA3HLayerPlugin` are available:
 | Method | Description |
 | ------ | ----------- |
 | `neighbors(cell, callback)` | Computes the direct neighbours of the grid cell `cell`.  The function `callback` is called with the list of neighbouring cells as an argument. |
-| `setCellColor(cell, color)` | Fills the grid cell `cell` by the colour `color`.  If `color` is `null`, the colour of the grid cell is computed using `colorGridFillData` and `colorGridFillNoData`. |
-| `setCellSize(id, size)` | Resizes the grid cell `cell` by the relative size `size`.  If `size` is `null`, the relative size of the grid cell is computed using `sizeGridData` and `sizeGridNoData`. |
-| `render()` | Forces the layer to render.  This method is to be used after having changed the color or the size of a grid cell, etc. |
+| `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed using the options `cellColor*`. |
+| `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed using the options `cellSize*`. |
+| `render()` | Forces the layer to render.  This method is to be used after having changed the colour or the size of a grid cell, etc. |
 
 ## Build geogrid.min.js
 
