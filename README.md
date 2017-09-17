@@ -121,7 +121,7 @@ The following options are available:
 | `attribution` | `String` | `'&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>'` | Attribution to be shown. |
 | `bboxViewPad` | `Number` | `1.1` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.1` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
-| `renderer` | `'webgl'|'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
+| `renderer` | `'webgl'\|'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
 
 ## Plugins
 
