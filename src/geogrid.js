@@ -414,6 +414,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._initialized = true
   },
   _updateScales() {
+    if (!this.options.data || !this.options.data.data) return
     const t = this
     const computeScale = (scale, min, max, value) => {
       if (value == null) return null
