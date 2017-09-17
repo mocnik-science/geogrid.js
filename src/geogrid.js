@@ -287,7 +287,6 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _updateData: function() {
     const t = this
-
     // download the data
     this._showProgress()
     this._debugStep('download data', 5)
@@ -307,7 +306,6 @@ L.ISEA3HLayer = L.Layer.extend({
   _processData: function() {
     // update scales
     this._updateScales()
-
     // call web worker
     this._webWorker.postMessage({
       task: 'computeCells',
@@ -352,7 +350,6 @@ L.ISEA3HLayer = L.Layer.extend({
     const b = this._map.getBounds().pad(this.options.bboxViewPad)
     if (b.equals(this._bboxView)) return this._geoJSONreduced
     this._bboxView = b
-
     // reduce
     this._debugStep('reduce GeoJSON for area', 70)
     this._geoJSONreduced = {
@@ -360,7 +357,7 @@ L.ISEA3HLayer = L.Layer.extend({
       features: [],
     }
     for (let f of this._geoJSON.features) if (b.intersects(L.latLngBounds(f.geometry.coordinates[0].map(c => [c[1], c[0]])))) this._geoJSONreduced.features.push(f)
-
+    // return
     return this._geoJSONreduced
   },
   _visualizeData: function() {
