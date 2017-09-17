@@ -79,7 +79,7 @@ L.isea3hLayer({
 })
 ```
 
-Even two different values related to a grid cell can be represented, encoded by the colour and the size of the cell:
+Even two different values related to a grid cell can be represented, for example, the value with key `value1` encoded by the colour, and the value with key `value2`, by the size of the cell:
 
 ```javascript
 L.isea3hLayer({
