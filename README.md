@@ -94,11 +94,12 @@ The following options are available:
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `url` | `String` | `null` | URL under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  The format of the data is described above. |
+| `url` | `String` | `null` | URL under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be used in the `url` by providing corresponding values in the option `parameters`.  The expected format of the returned data is described above. |
 | `data` | `Array` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
 | `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
 | `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
 | `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
+| `parameters` | `Array` | `{date: new Date().toLocaleDateString(), dateFrom: null}` | Additional parameters that can be used in the `url`. |
 | `cellColorKey` | `String` | `value` | The colour to be used for a grid cell can be chosen in dependence of the property `cellColorKey` of the cell.  The colour is, accordingly, determined by computing the function `cellColorScale` with the property `cellColorKey` of the cell as argument.  If the option `cellColorKey` is `null`, the colour `cellColorNoKey` is used instead. |
 | `cellColorMin` | `Number` | `0` | Minimum value to be used in `cellColorScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
 | `cellColorMax` | `Number` | `null` | Maximum value to be used in `cellColorScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
@@ -179,7 +180,15 @@ Plugins can react to events by performing an action as soon as an event is trigg
 ```javascript
 onHover(e) {
   this.setCellColor(e.cell, 'blue')
+  this.render()
 }
+```
+
+The URL that is used to retrieve data from a server contains parameters.  Among these parameters are the resolution and the bounding box, but potentially also additional parameters.  These additional parameters can, for example, be set as follows:
+
+```javascript
+this.setParameter('date', '2017-01-01')
+this.downloadData()
 ```
 
 Some of the functions except a callback as parameter because the result is computed asynchronously:
@@ -195,12 +204,15 @@ The following methods of the `ISEA3HLayerPlugin` are available:
 
 | Method | Description |
 | ------ | ----------- |
+| `downloadData()` | Forces the data to be downloaded anew.  After having downloaded the data, the method `render` is automatically executed. |
+| `render()` | Forces the layer to render. |
 | `neighbors(cell, callback)` | Computes the direct neighbours of the grid cell `cell`.  The function `callback` is called with the list of neighbouring cells as an argument. |
-| `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed by using the options `cellColor*`. |
-| `resetCellColor()` | Computes the colour of all grid cells by using the options `cellColor*`. |
-| `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed by using the options `cellSize*`. |
-| `resetCellSize()` | Computes the relative size of all grid cells by using the options `cellSize*`. |
-| `render()` | Forces the layer to render.  This method is to be used after having changed the colour or the size of a grid cell, etc. |
+| `getParameter(parameter)` | Gets the value of a parameter.  Such parameters can be used in the URL when requesting data from the server. |
+| `setParameter(parameter, value)` | Sets a parameter. Such parameters can be used in the URL when requesting data from the server.  The method `downloadData` needs to be called to make the change effective. |
+| `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed by using the options `cellColor*`.  The method `render` needs to be called to make the change effective. |
+| `resetCellColor()` | Computes the colour of all grid cells by using the options `cellColor*`.  The method `render` needs to be called to make the change effective. |
+| `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
+| `resetCellSize()` | Computes the relative size of all grid cells by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
 
 ## Build geogrid.min.js
 

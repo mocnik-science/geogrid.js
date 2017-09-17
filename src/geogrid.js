@@ -10,11 +10,20 @@ class ISEA3HLayerPlugin {
   onAdd(layer) {
     this._layer = layer
   }
+  downloadData() {
+    this._layer._updateData()
+  }
   render() {
     this._layer._render()
   }
   neighbors(cell, callback) {
     return this._layer._neighbors(cell, callback)
+  }
+  getParameter(parameter) {
+    return this._layer.options.parameters[parameter]
+  }
+  setParameter(parameter, value) {
+    this._layer.options.parameters[parameter] = value
   }
   setCellColor(cell, value) {
     if (value) this._layer._overwriteColor[cell.id] = value
@@ -45,6 +54,10 @@ L.ISEA3HLayer = L.Layer.extend({
       if (s <= 6) return 8
       if (s <= 9) return 12
       return 14
+    },
+    parameters: {
+      date: new Date().toLocaleDateString(),
+      dateFrom: null,
     },
     cellColorKey: 'value',
     cellColorMin: 0,
@@ -296,10 +309,11 @@ L.ISEA3HLayer = L.Layer.extend({
     if (this.options.url) {
       const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad)
       const r = this._resolutionData = this.options.resolution(this._map.getZoom())
-      const url = this.options.url
+      let url = this.options.url
         .replace('{bbox}', b.toBBoxString())
         .replace('{resolution}', r)
-      if (this.options.debug) this._log(url)
+      for (const p in this.options.parameters) url = url.replace(`{${p}}`, (this.options.parameters[p] !== null) ? this.options.parameters[p] : '')
+      if (this.options.debug || !this.options.silent) this._log(url)
       d3.json(url, data => {
         t.options.data = data
         t._processData()
