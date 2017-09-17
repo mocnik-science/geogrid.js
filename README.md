@@ -27,11 +27,11 @@ In the following, we can add the `ISEA3HLayer`, which is provided by this librar
 
 ```javascript
 var isea3h = L.isea3hLayer({
-  url: 'http://localhost:8080/api/test-measure/grid?bbox={bbox}&resolution={resolution}',
+  url: 'http://localhost:8080/api/test-measure/grid?resolution={resolution}&bbox={bbox}&date={date}&dateFrom={dateFrom}',
 }).addTo(map);
 ```
 
-As an option, a URL needs to be provided under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively. The data should be formatted as follows:
+As an option, a URL needs to be provided under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be encoded, as is discussed in the description of the option `parameters`.  The data should be formatted as follows:
 
 ```json
 {
@@ -54,7 +54,7 @@ The `ISEA3HLayer` can be used in combination with different base maps.  A good c
 var map = L.map('map').setView([49.4, 8.7], 10);
 new L.StamenTileLayer('toner-lite').addTo(map);
 var isea3h = L.isea3hLayer({
-  url: 'http://localhost:8080/api/test-measure/grid?bbox={bbox}&resolution={resolution}',
+  url: 'http://localhost:8080/api/test-measure/grid?resolution={resolution}&bbox={bbox}&date={date}&dateFrom={dateFrom}',
 }).addTo(map);
 ```
 
