@@ -20,9 +20,15 @@ class ISEA3HLayerPlugin {
     if (value) this._layer._overwriteColor[cell.id] = value
     else delete this._layer._overwriteColor[cell.id]
   }
+  resetCellColor() {
+    this._layer._overwriteColor = {}
+  }
   setCellSize(cell, value) {
     if (value) this._layer._overwriteSize[cell.id] = value
     else delete this._layer._overwriteSize[cell.id]
+  }
+  resetCellSize() {
+    this._layer._overwriteSize = {}
   }
 }
 

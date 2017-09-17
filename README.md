@@ -195,8 +195,10 @@ The following methods of the `ISEA3HLayerPlugin` are available:
 | Method | Description |
 | ------ | ----------- |
 | `neighbors(cell, callback)` | Computes the direct neighbours of the grid cell `cell`.  The function `callback` is called with the list of neighbouring cells as an argument. |
-| `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed using the options `cellColor*`. |
-| `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed using the options `cellSize*`. |
+| `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed by using the options `cellColor*`. |
+| `resetCellColor()` | Computes the colour of all grid cells by using the options `cellColor*`. |
+| `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed by using the options `cellSize*`. |
+| `resetCellSize()` | Computes the relative size of all grid cells by using the options `cellSize*`. |
 | `render()` | Forces the layer to render.  This method is to be used after having changed the colour or the size of a grid cell, etc. |
 
 ## Build geogrid.min.js
