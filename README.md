@@ -51,7 +51,7 @@ The `ISEA3HLayer` can be used in combination with different base maps.  A good c
 
 ```javascript
 var map = L.map('map').setView([49.4, 8.7], 10);
-new L.StamenTileLayer('toner-lite', {opacityGridFill: .5}).addTo(map);
+new L.StamenTileLayer('toner-lite').addTo(map);
 var isea3h = L.isea3hLayer({
   url: 'http://localhost:8080/api/test-measure/grid?bbox={bbox}&resolution={resolution}',
 }).addTo(map);
