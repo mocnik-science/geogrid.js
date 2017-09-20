@@ -39,7 +39,7 @@ As an option, a URL needs to be provided under which data aggregated by the ISEA
     "resolution":14,
     ...
     "data":[
-        {"value":.345, "id":"1309502766029885663"},
+        {"value":0.345, "id":"1309502766029885663"},
         {"value":null, "id":"1309502851015240491"},
         ...
     ]
