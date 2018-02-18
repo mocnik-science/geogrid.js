@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>geogrid.js - Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <script src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.5.4/pixi.min.js"></script>
+    <script src="libs/Leaflet.PixiOverlay/L.PixiOverlay.js"></script>
+    <script src="libs/geogrid.min.js"></script>
+    <script src="geogrid.testPlugin.js"></script>
+    <style>
+      #map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+    <script>
+      $(document).ready(function() {
+        var map = L.map('map').setView([49.4, 8.7], 10);
+        new L.StamenTileLayer('toner-lite').addTo(map);
+        var isea3h = L.isea3hLayer({
+          url: 'http://localhost:8080/api/measure-test/grid?bbox={bbox}&resolution={resolution}&date={date}&dateFrom={dateFrom}',
+        }).addTo(map);
+        isea3h.addPlugin(L.testPlugin());
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+  </body>
+</html>
