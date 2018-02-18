@@ -668,12 +668,13 @@ const isea3hWorker = () => {
         lat = d.lat
       } else {
         let idWithoutSign = (isPentagon) ? d.id.substr(1) : d.id
-        if (idWithoutSign.length < 19) idWithoutSign = '0' + idWithoutSign
-        lat = parseInt(idWithoutSign.substr(2, 8)) / 1e6
-        lon = parseInt(idWithoutSign.substr(10)) / 1e6
+        if (idWithoutSign.length % 2 == 0) idWithoutSign = '0' + idWithoutSign
+        const numberOfDecimalPlaces = (idWithoutSign.length - 2 - 5) / 2
+        lat = parseInt(idWithoutSign.substr(2, numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
+        lon = parseInt(idWithoutSign.substr(2 + numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
         const partB = parseInt(idWithoutSign.substr(0, 2))
-        if ((partB >= 20 && partB < 40) || partB >= 60) lat *= -1
-        if (partB >= 40) lon *= -1
+        if ((partB >= 22 && partB < 44) || partB >= 66) lat *= -1
+        if (partB >= 44) lon *= -1
       }
       const lonNew = lon + i * 360
       if (west <= lonNew && lonNew <= east) {

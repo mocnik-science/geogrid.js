@@ -46,7 +46,11 @@ As an option, a URL needs to be provided under which data aggregated by the ISEA
 }
 ```
 
-Such data can, for example, be provided by the framework [Measures REST](https://github.com/giscience/measures-rest).
+The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive IDs*, as is described in:
+
+tba
+
+Data which is formatted in the above format is, for example, provided by the framework [Measures REST](https://github.com/giscience/measures-rest).
 
 The `ISEA3HLayer` can be used in combination with different base maps.  A good choice is [Toner lite by Stamen](http://maps.stamen.com/toner-lite).  The complete code of the example is as follows:
 
@@ -192,6 +196,7 @@ this.downloadData()
 ```
 
 Some of the functions except a callback as parameter because the result is computed asynchronously:
+
 ```javascript
 onHover(e) {
   this.neighbors(e.cell, cell => {
