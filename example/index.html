@@ -23,8 +23,8 @@
     <script>
       $(document).ready(function() {
         var map = L.map('map').setView([49.4, 8.7], 10);
-        L.isea3hLayer({
         new L.StamenTileLayer('toner-lite').addTo(map);
+        L.isea3hLayer({
           url: 'http://localhost:8080/api/measure-test/grid?bbox={bbox}&resolution={resolution}',
         }).addTo(map);
       });
