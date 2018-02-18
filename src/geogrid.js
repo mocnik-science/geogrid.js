@@ -6,7 +6,7 @@ if (typeof L === 'undefined') throw '[geogrid.js] Leaflet needs to be loaded fir
 if (typeof d3 === 'undefined') throw '[geogrid.js] D3.js needs to be loaded first'
 
 /****** PLUGIN ******/
-class ISEA3HLayerPlugin {
+L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
   onAdd(layer) {
     this._layer = layer
   }
