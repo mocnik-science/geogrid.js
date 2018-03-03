@@ -4,6 +4,12 @@ The library `geogrid.js` provides a [Leaflet](http://leafletjs.com) layer that d
 
 ![Overview](https://github.com/giscience/geogrid.js/blob/master/docs/images/screenshot.jpg)
 
+## Scientific Publications
+
+The following publication is related to this plugin and the used DGGS:
+
+* F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
+
 ## Related Software
 
 This library is compatible with the framework [**Measures REST**](https://github.com/giscience/measures-rest), which can be used to aggregate data by a grid and then provide the data by a REST interface.  Data can also be aggregated manually by using the library [**geogrid**](https://github.com/giscience/geogrid) that computes and handles Discrete Global Grid Systems (DGGS).
@@ -48,7 +54,7 @@ As an option, a URL needs to be provided under which data aggregated by the ISEA
 
 The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive IDs*, as is described in:
 
-tba
+* F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
 
 Data which is formatted in the above format is, for example, provided by the framework [Measures REST](https://github.com/giscience/measures-rest).
 
