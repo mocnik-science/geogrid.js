@@ -538,33 +538,31 @@ L.ISEA3HLayer = L.Layer.extend({
       const container = utils.getContainer()
       const project = utils.latLngToLayerPoint
       const scale = utils.getScale()
-      setTimeout(() => {
-        // colours
-        const cellContourColor = pixiColor(t.options.cellContourColor)
-        // check whether a referesh is need
-        const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
-        prevZoom = zoom
-        prevOverwriteColor = JSON.stringify(this._overwriteColor)
-        prevOverwriteSize = JSON.stringify(this._overwriteSize)
-        // if new geoJSON, cleanup and initialize
-        if (t._geoJSON._webgl_initialized == null || needsRefresh) {
-          t._geoJSON._webgl_initialized = true
-          pixiGraphics.clear()
-          pixiGraphics.lineStyle(t.options.cellContourWidth / scale, cellContourColor, 1)
+      // colours
+      const cellContourColor = pixiColor(t.options.cellContourColor)
+      // check whether a referesh is need
+      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
+      prevZoom = zoom
+      prevOverwriteColor = JSON.stringify(this._overwriteColor)
+      prevOverwriteSize = JSON.stringify(this._overwriteSize)
+      // if new geoJSON, cleanup and initialize
+      if (t._geoJSON._webgl_initialized == null || needsRefresh) {
+        t._geoJSON._webgl_initialized = true
+        pixiGraphics.clear()
+        pixiGraphics.lineStyle(t.options.cellContourWidth / scale, cellContourColor, 1)
+      }
+      // draw geoJSON features
+      for (const feature of t._geoJSON.features) {
+        const notInitialized = (feature._webgl_coordinates == null)
+        if (notInitialized) feature._webgl_coordinates = t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
+        if (notInitialized || needsRefresh) {
+          pixiGraphics.beginFill(pixiColor(t._cellColor(feature.properties.id, feature.properties)), t.options.cellColorOpacity)
+          pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
+          pixiGraphics.endFill()
         }
-        // draw geoJSON features
-        for (const feature of t._geoJSON.features) {
-          const notInitialized = (feature._webgl_coordinates == null)
-          if (notInitialized) feature._webgl_coordinates = t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
-          if (notInitialized || needsRefresh) {
-            pixiGraphics.beginFill(pixiColor(t._cellColor(feature.properties.id, feature.properties)), t.options.cellColorOpacity)
-            pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
-            pixiGraphics.endFill()
-          }
-        }
-        renderer.render(container)
-        t._debugFinished()
-      }, 1)
+      }
+      renderer.render(container)
+      t._debugFinished()
     }, pixiContainer).addTo(map)
   },
   _removeWebGL: function(map) {
