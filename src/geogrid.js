@@ -81,6 +81,7 @@ L.ISEA3HLayer = L.Layer.extend({
     bboxViewPad: 1.1,
     bboxDataPad: 1.4,
     renderer: 'webgl',
+    urlLibs: '/libs',
   },
   initialize: function(options) {
     this._initialized = false
@@ -136,9 +137,14 @@ L.ISEA3HLayer = L.Layer.extend({
     }
 
     // create web worker
-    let url = document.location.href.split('/')
-    url = url.splice(0, url.length - 1).join('/') + '/'
-    const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts(\'./vptree.js/vptree.min.js\')', `importScripts('${url}libs/vptree.js/vptree.min.js')`)
+    let url = null
+    if (this.options.urlLibs.startsWith('http')) url = this.options.urlLibs
+    else if (this.options.urlLibs.startsWith('/')) url = `${document.location.protocol}//${document.location.hostname}${document.location.port ? `:${document.location.port}` : ''}${this.options.urlLibs}`
+    else {
+      url = document.location.href.split('/')
+      url = `${url.splice(0, url.length - 1).join('/')}/${this.options.urlLibs}`
+    }
+    const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts(\'./vptree.js/vptree.min.js\')', `importScripts('${url}/vptree.js/vptree.min.js')`)
     this._webWorker = new Worker(URL.createObjectURL(new Blob([workerFunctionString])))
     this._webWorker.addEventListener('message', e => {
       const d = e.data
