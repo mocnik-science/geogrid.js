@@ -264,7 +264,7 @@ L.ISEA3HLayer = L.Layer.extend({
     if (percent !== null) this._progress(percent)
     if (!this.options.silent) {
       const t = (new Date()).getTime()
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(this._debugTitle + ' (' + (t - this._debugTimestamp) + 'ms)')
+      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${t - this._debugTimestamp}ms)`)
       this._debugTimestamp = t
       this._debugTitle = title
     }
@@ -272,7 +272,7 @@ L.ISEA3HLayer = L.Layer.extend({
   _debugFinished: function() {
     this._progress(100)
     if (!this.options.silent) {
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(this._debugTitle + ' (' + ((new Date()).getTime() - this._debugTimestamp) + 'ms)')
+      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${(new Date()).getTime() - this._debugTimestamp}ms)`)
       this._debugTimestamp = null
       this._debugTitle = null
     }
@@ -500,9 +500,9 @@ L.ISEA3HLayer = L.Layer.extend({
     this._svg
       .attr('width', bounds[1][0] - bounds[0][0])
       .attr('height', bounds[1][1] - bounds[0][1])
-      .style('left', bounds[0][0] + 'px')
-      .style('top', bounds[0][1] + 'px')
-    this._g.attr('transform', 'translate(' + -bounds[0][0] + ',' + -bounds[0][1] + ')')
+      .style('left', `${bounds[0][0]}px`)
+      .style('top', `${bounds[0][1]}px`)
+    this._g.attr('transform', `translate(${-bounds[0][0]},${-bounds[0][1]})`)
     this._visHexagons.attr('d', feature => path({
       type: feature.type,
       geometry: {
@@ -677,7 +677,7 @@ const isea3hWorker = () => {
       const lonNew = lon + i * 360
       if (west <= lonNew && lonNew <= east) {
         dNew = {
-          idLong: d.id + "_" + i,
+          idLong: `${d.id}_${i}`,
           lat: lat,
           lon: lonNew,
           sinLat: Math.sin(lat * rad),
