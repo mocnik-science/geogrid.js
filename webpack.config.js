@@ -1,6 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
-const BibiliPlugin = require('babili-webpack-plugin')
+const MinifyPlugin = require('babel-minify-webpack-plugin')
 
 module.exports = {
   entry: './src/geogrid.js',
@@ -33,6 +33,6 @@ module.exports = {
   },
   devtool: 'source-map',
   plugins: [
-    new BibiliPlugin({}),
+    new MinifyPlugin({}),
   ],
 }
