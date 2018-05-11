@@ -231,7 +231,7 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   onRemove: function(map) {
-    this.removeRender(map)
+    this._removeRender(map)
     this._webWorker.terminate()
   },
   addPlugin: function(plugin) {
