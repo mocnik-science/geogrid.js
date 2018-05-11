@@ -124,14 +124,14 @@ L.ISEA3HLayer = L.Layer.extend({
     // choose renderer
     if (this.options.renderer.toLowerCase() == 'svg') {
       this._addRender = this._addSVG
-      this._removeAdd = this._removeSVG
+      this._removeRender = this._removeSVG
       this._renderRender = this._renderSVG
       this._updateRender = this._updateSVG
     } else {
       if (typeof PIXI === 'undefined') this._error('pixi.js needs to be loaded first')
       if (typeof L.pixiOverlay === 'undefined') this._error('Leaflet.PixiOverlay needs to be loaded first')
       this._addRender = this._addWebGL
-      this._removeAdd = this._removeWebGL
+      this._removeRender = this._removeWebGL
       this._renderRender = this._renderWebGL
       this._updateRender = this._updateWebGL
     }
