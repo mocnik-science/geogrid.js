@@ -231,6 +231,8 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   onRemove: function(map) {
+    clearTimeout(this._progresBarTimeoutReset)
+    this._progressBar.remove()
     this._removeRender(map)
     this._webWorker.terminate()
   },
