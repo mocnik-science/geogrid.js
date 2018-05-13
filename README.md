@@ -8,7 +8,7 @@ The library `geogrid.js` provides a [Leaflet](http://leafletjs.com) layer that d
 
 The following publication is related to this plugin and the used DGGS:
 
-* F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
+* F-B Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
 
 ## Related Software
 
