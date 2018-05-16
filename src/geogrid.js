@@ -432,6 +432,7 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   _onReset(e) {
+    if (this._geoJSON === undefined) return
     // reset after zooming, etc.
     const geoJSONreduced = this._reduceGeoJSON()
     if (this._geoJSON.features.length) this._updateRender(geoJSONreduced)
