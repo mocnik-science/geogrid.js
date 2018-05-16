@@ -204,37 +204,30 @@ L.ISEA3HLayer = L.Layer.extend({
     this._updateData()
 
     // plugins
-    this._map.on('mousemove', e => {
-      if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
-        task: 'findCell',
-        taskResult: 'resultPluginsHover',
-        lat: e.latlng.lat,
-        lon: e.latlng.lng,
-      })
-    })
-    this._map.on('mouseout', e => {
-      for (const cell of this._hoveredCells) {
-        const ePlugin = {
-          cell: cell,
-        }
-        for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
-      }
-      this._hoveredCells = []
-    })
-    this._map.on('click', e => {
-      if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
-        task: 'findCell',
-        taskResult: 'resultPluginsClick',
-        lat: e.latlng.lat,
-        lon: e.latlng.lng,
-      })
-    })
+    this._map.on('mousemove', this._onMouseMove)
+    this._map.on('mouseout', this._onMouseOut)
+    this._map.on('click', this._onClick)
+    
+    // events
+    this._map.on('viewreset', this._onReset, this)
+    this._map.on('zoomend', this._onReset, this)
+    this._map.on('moveend', this._onReset, this)
   },
   onRemove: function(map) {
     clearTimeout(this._progresBarTimeoutReset)
     this._progressBar.remove()
     this._removeRender(map)
     this._webWorker.terminate()
+    
+    // plugins
+    this._map.off('mousemove', this._onMouseMove)
+    this._map.off('mouseout', this._onMouseOut)
+    this._map.off('click', this._onClick)
+    
+    // events
+    this._map.off('viewreset', this._onReset, this)
+    this._map.off('zoomend', this._onReset, this)
+    this._map.off('moveend', this._onReset, this)
   },
   addPlugin: function(plugin) {
     plugin.onAdd(this)
@@ -370,7 +363,7 @@ L.ISEA3HLayer = L.Layer.extend({
     // visualize data
     this._visualizeData()
   },
-  _reduceGeoJSON: function() {
+  _reduceGeoJSON() {
     // save bounds and return cached GeoJSON in case of unchanged bounds
     const b = this._map.getBounds().pad(this.options.bboxViewPad)
     if (b.equals(this._bboxView)) return this._geoJSONreduced
@@ -385,7 +378,7 @@ L.ISEA3HLayer = L.Layer.extend({
     // return
     return this._geoJSONreduced
   },
-  _visualizeData: function() {
+  _visualizeData() {
     const t = this
     const geoJSON = this._geoJSON
     // visualize
@@ -408,18 +401,41 @@ L.ISEA3HLayer = L.Layer.extend({
       // visualize cells
       this._render()
     }
-    // reset after zooming, etc.
-    const reset = () => {
-      const geoJSONreduced = this._reduceGeoJSON()
-      if (geoJSON.features.length) t._updateRender(geoJSONreduced)
-      if ((!t._bboxData.contains(t._bboxView)) || (t.options.resolution(t._map.getZoom()) !== t._resolutionData)) t._updateData()
-    }
-    this._map.on('viewreset', reset)
-    this._map.on('zoomend', reset)
-    this._map.on('moveend', reset)
-    reset()
+    this._onReset()
     // layer has been initialized
     this._initialized = true
+  },
+  _onMouseMove(e) {
+    if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+      task: 'findCell',
+      taskResult: 'resultPluginsHover',
+      lat: e.latlng.lat,
+      lon: e.latlng.lng,
+    })
+  },
+  _onMouseOut(e) {
+    if (this._hoveredCells === undefined) return
+    for (const cell of this._hoveredCells) {
+      const ePlugin = {
+        cell: cell,
+      }
+      for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
+    }
+    this._hoveredCells = []
+  },
+  _onClick(e) {
+    if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+      task: 'findCell',
+      taskResult: 'resultPluginsClick',
+      lat: e.latlng.lat,
+      lon: e.latlng.lng,
+    })
+  },
+  _onReset(e) {
+    // reset after zooming, etc.
+    const geoJSONreduced = this._reduceGeoJSON()
+    if (this._geoJSON.features.length) this._updateRender(geoJSONreduced)
+    if ((!this._bboxData.contains(this._bboxView)) || (this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
   },
   _updateScales() {
     if (!this.options.data || !this.options.data.data) return
