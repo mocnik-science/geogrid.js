@@ -23,6 +23,8 @@ The library `geogrid.js` requires different other libraries to be loaded:
 * [Leaflet.PixiOverlay](https://github.com/manubb/Leaflet.PixiOverlay)
 * [D3.js](https://d3js.org)
 
+In addition, the [vptree.js library](http://fpirsch.github.io/vptree.js/) needs to be placed in the directory `/libs`.  In particular, the library should be made accessible as `/libs/vptree.js/vptree.min.js`.
+
 In order to use the `ISEA3HLayer`, a Leaflet map needs to be loaded first, for example, like follows:
 
 ```javascript
