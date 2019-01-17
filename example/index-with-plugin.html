@@ -27,6 +27,7 @@
         L.stamenTileLayer('toner-lite').addTo(map);
         var isea3h = L.isea3hLayer({
           url: 'http://localhost:8080/api/measure-test/grid?bbox={bbox}&resolution={resolution}&date={date}&dateFrom={dateFrom}',
+          urlLibs: '../example/libs',
         }).addTo(map);
         isea3h.addPlugin(L.testPlugin());
       });

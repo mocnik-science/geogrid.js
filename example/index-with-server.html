@@ -26,6 +26,7 @@
         new L.StamenTileLayer('toner-lite').addTo(map);
         L.isea3hLayer({
           url: 'http://localhost:8080/api/measure-test/grid?bbox={bbox}&resolution={resolution}',
+          urlLibs: '../example/libs',
         }).addTo(map);
       });
     </script>
