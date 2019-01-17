@@ -131,8 +131,8 @@ The following options are available:
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
 | `attribution` | `String` | `'&copy; <a href="http://www.uni-heidelberg.de">Heidelberg University</a>'` | Attribution to be shown. |
-| `bboxViewPad` | `Number` | `1.1` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
-| `bboxDataPad` | `Number` | `1.1` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
+| `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
+| `bboxDataPad` | `Number` | `1.25` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `renderer` | `'webgl'`\|`'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
 | `urlLibs` | String | `'/libs'` | URL under which the libraries can be found. In particular, the file `vptree.js/vptree.min.js` should exist in the directory `urlLibs`. |
 

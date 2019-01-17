@@ -85,6 +85,7 @@ module.exports.Data = class Data {
     }
   }
   reduceGeoJSON(b) {
+    // return cached GeoJSON in case of unchanged bounds
     if (b.equals(this._bboxView)) return this._geoJSONreduced
     this._bboxView = b
     // reduce
