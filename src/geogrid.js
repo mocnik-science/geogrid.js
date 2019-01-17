@@ -256,7 +256,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._progress.showProgress()
     this._progress.debugStep('download data', 5)
     if (this.options.url) {
-      const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad)
+      const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
       const r = this._resolutionData = this.options.resolution(this._map.getZoom())
       let url = this.options.url
         .replace('{bbox}', b.toBBoxString())
@@ -294,8 +294,7 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _reduceGeoJSON() {
     this._progress.debugStep('reduce GeoJSON for area', 70)
-    // save bounds and return cached GeoJSON in case of unchanged bounds
-    const b = this._map.getBounds().pad(this.options.bboxViewPad)
+    const b = this._map.getBounds().pad(this.options.bboxViewPad - 1)
     return this._data.reduceGeoJSON(b)
   },
   _visualizeData() {
