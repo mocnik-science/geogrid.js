@@ -1,6 +1,10 @@
 "use strict"
 
 require('./geogrid.scss')
+const Data = require('./geogrid.data.js').Data
+const Progress = require('./geogrid.progress.js').Progress
+const RendererWebGL = require('./geogrid.rendererWebGL.js').RendererWebGL
+const RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG
 const isea3hWorker = require('./geogrid.worker.js').isea3hWorker
 
 if (typeof L === 'undefined') throw '[geogrid.js] Leaflet needs to be loaded first'
@@ -27,18 +31,18 @@ L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
     this._layer.options.parameters[parameter] = value
   }
   setCellColor(cell, value) {
-    if (value) this._layer._overwriteColor[cell.id] = value
-    else delete this._layer._overwriteColor[cell.id]
+    if (value) this._layer._data._overwriteColor[cell.id] = value
+    else delete this._layer._data._overwriteColor[cell.id]
   }
   resetCellColor() {
-    this._layer._overwriteColor = {}
+    this._layer._data._overwriteColor = {}
   }
   setCellSize(cell, value) {
-    if (value) this._layer._overwriteSize[cell.id] = value
-    else delete this._layer._overwriteSize[cell.id]
+    if (value) this._layer._data._overwriteSize[cell.id] = value
+    else delete this._layer._data._overwriteSize[cell.id]
   }
   resetCellSize() {
-    this._layer._overwriteSize = {}
+    this._layer._data._overwriteSize = {}
   }
 }
 
@@ -87,20 +91,23 @@ L.ISEA3HLayer = L.Layer.extend({
   initialize: function(options) {
     this._initialized = false
 
+    // init progress
+    this._progress = new Progress(this.options)
+
     // init options
     L.Util.setOptions(this, options)
     if (this.options.debug) this.options.silent = false
     if (!this.options.cellContourColor) this.options.cellContourColor = (this.options.debug) ? this.options.colorDebug : '#fff'
     if (this.options.bboxViewPad < 1) {
-      this._error('bboxViewPad must be larger than 1')
+      this._progress.error('bboxViewPad must be larger than 1')
       this.options.bboxViewPad = 1
     }
     if (this.options.bboxDataPad < 1) {
-      this._error('bboxDataPad must be larger than 1')
+      this._progress.error('bboxDataPad must be larger than 1')
       this.options.bboxDataPad = 1
     }
     if (this.options.bboxDataPad < this.options.bboxViewPad) {
-      this._error('bboxDataPad must be larger or equal than bboxViewPad')
+      this._progress.error('bboxDataPad must be larger or equal than bboxViewPad')
       this.options.bboxDataPad = this.options.bboxViewPad
     }
     this._cellColorScale = null
@@ -110,31 +117,16 @@ L.ISEA3HLayer = L.Layer.extend({
     this._plugins = []
     this._pluginCallbacks = {}
     this._hoveredCells = []
-    this._overwriteColor = {}
-    this._overwriteSize = {}
 
-    // init progress bar
-    this._progressBar = document.createElement('div')
-    this._progressBar.style.backgroundColor = this.options.colorProgressBar
-    const backgroundColor = d3.color(this.options.colorProgressBar)
-    backgroundColor.opacity = .7
-    this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
-    document.getElementsByTagName('body')[0].appendChild(this._progressBar)
-    this._progress(100)
+    // init data
+    this._data = new Data(this.options)
 
     // choose renderer
-    if (this.options.renderer.toLowerCase() == 'svg') {
-      this._addRender = this._addSVG
-      this._removeRender = this._removeSVG
-      this._renderRender = this._renderSVG
-      this._updateRender = this._updateSVG
-    } else {
-      if (typeof PIXI === 'undefined') this._error('pixi.js needs to be loaded first')
-      if (typeof L.pixiOverlay === 'undefined') this._error('Leaflet.PixiOverlay needs to be loaded first')
-      this._addRender = this._addWebGL
-      this._removeRender = this._removeWebGL
-      this._renderRender = this._renderWebGL
-      this._updateRender = this._updateWebGL
+    if (this.options.renderer.toLowerCase() == 'svg') this._renderer = new RendererSVG(this.options, this._progress, this._data)
+    else {
+      if (typeof PIXI === 'undefined') this._progress.error('pixi.js needs to be loaded first')
+      if (typeof L.pixiOverlay === 'undefined') this._progress.error('Leaflet.PixiOverlay needs to be loaded first')
+      this._renderer = new RendererWebGL(this.options, this._progress, this._data)
     }
 
     // create web worker
@@ -151,19 +143,19 @@ L.ISEA3HLayer = L.Layer.extend({
       const d = e.data
       switch (d.task) {
         case 'log':
-          this._log(d.message)
+          this._progress.log(d.message)
           break
         case 'progress':
-          this._progress(d.percent)
+          this._progress.progress(d.percent)
           break
         case 'debugStep':
-          this._debugStep(d.title, d.percent)
+          this._progress.debugStep(d.title, d.percent)
           break
         case 'debugFinished':
-          this._debugFinished()
+          this._progress.debugFinished()
           break
         case 'resultComputeCells':
-          this._cells = d.cells
+          this._data._cells = d.cells
           this._produceGeoJSON()
           break
         case 'resultPluginsHover':
@@ -201,7 +193,7 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   onAdd: function(map) {
     this._map = map
-    this._addRender(map)
+    this._renderer.add(map)
     this._updateData()
 
     // plugins
@@ -215,9 +207,8 @@ L.ISEA3HLayer = L.Layer.extend({
     this._map.on('moveend', this._onReset, this)
   },
   onRemove: function(map) {
-    clearTimeout(this._progresBarTimeoutReset)
-    this._progressBar.remove()
-    this._removeRender(map)
+    this._progress.remove()
+    this._renderer.remove(map)
     this._webWorker.terminate()
     
     // plugins
@@ -235,50 +226,6 @@ L.ISEA3HLayer = L.Layer.extend({
     this._plugins.push(plugin)
     if (plugin.onHover !== undefined) this._pluginsOnHover = true
     if (plugin.onClick !== undefined) this._pluginsOnClick = true
-  },
-  _log: function(message) {
-    console.log(`[geogrid.js] ${message}`)
-  },
-  _error: function(message) {
-    throw `[geogrid.js] ${message}`
-  },
-  _progress: function(percent=100) {
-    if (this._progresBarTimeoutReset !== undefined) {
-      clearTimeout(this._progresBarTimeoutReset)
-      this._progresBarTimeoutReset = undefined
-    }
-    if (this.noProgress) return
-    if (0 < percent && percent < 100) this._progressBar.className = 'progressBar'
-    else {
-      this._progressBar.className = 'progressBarHidden'
-      this._progresBarTimeoutReset = setTimeout(() => {
-        this._progresBarTimeoutReset = undefined
-        this._progressBar.style.width = '0%'
-        this._progressBar.className = 'progressBarReset'
-      }, 700)
-    }
-    this._progressBar.style.width = `${percent}%`
-  },
-  _showProgress: function() {
-    this.noProgress = false
-  },
-  _debugStep: function(title, percent=null) {
-    if (percent !== null) this._progress(percent)
-    if (!this.options.silent) {
-      const t = (new Date()).getTime()
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${t - this._debugTimestamp}ms)`)
-      this._debugTimestamp = t
-      this._debugTitle = title
-    }
-  },
-  _debugFinished: function() {
-    this._progress(100)
-    if (!this.options.silent) {
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${(new Date()).getTime() - this._debugTimestamp}ms)`)
-      this._debugTimestamp = null
-      this._debugTitle = null
-    }
-    this.noProgress = true
   },
   _uuidv4: function() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -306,8 +253,8 @@ L.ISEA3HLayer = L.Layer.extend({
   _updateData: function() {
     const t = this
     // download the data
-    this._showProgress()
-    this._debugStep('download data', 5)
+    this._progress.showProgress()
+    this._progress.debugStep('download data', 5)
     if (this.options.url) {
       const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad)
       const r = this._resolutionData = this.options.resolution(this._map.getZoom())
@@ -315,7 +262,7 @@ L.ISEA3HLayer = L.Layer.extend({
         .replace('{bbox}', b.toBBoxString())
         .replace('{resolution}', r)
       for (const p in this.options.parameters) url = url.replace(`{${p}}`, (this.options.parameters[p] !== null) ? this.options.parameters[p] : '')
-      if (this.options.debug || !this.options.silent) this._log(url)
+      if (this.options.debug || !this.options.silent) this._progress.log(url)
       d3.json(url, data => {
         t.options.data = data
         t._processData()
@@ -324,7 +271,7 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _processData: function() {
     // update scales
-    this._updateScales()
+    this._data.updateScales()
     // call web worker
     this._webWorker.postMessage({
       task: 'computeCells',
@@ -339,57 +286,29 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   _produceGeoJSON: function() {
+    this._progress.debugStep('produce GeoJSON', 65)
     // produce GeoJSON
-    this._debugStep('produce GeoJSON', 65)
-    const features = []
-    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._cells[0]).filter(k => !(k in ['lat', 'lon', 'isPentagon'])) : []
-    for (let c of this._cells) {
-      if (c.vertices !== undefined) {
-        const properties = {}
-        for (const k of keysToCopy) properties[k] = c[k]
-        features.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [c.vertices],
-          },
-          properties: properties,
-        })
-      }
-    }
-    this._geoJSON = {
-      type: 'FeatureCollection',
-      features: features,
-    }
+    this._data.produceGeoJSON()
     // visualize data
     this._visualizeData()
   },
   _reduceGeoJSON() {
+    this._progress.debugStep('reduce GeoJSON for area', 70)
     // save bounds and return cached GeoJSON in case of unchanged bounds
     const b = this._map.getBounds().pad(this.options.bboxViewPad)
-    if (b.equals(this._bboxView)) return this._geoJSONreduced
-    this._bboxView = b
-    // reduce
-    this._debugStep('reduce GeoJSON for area', 70)
-    this._geoJSONreduced = {
-      type: 'FeatureCollection',
-      features: [],
-    }
-    for (let f of this._geoJSON.features) if (b.intersects(L.latLngBounds(f.geometry.coordinates[0].map(c => [c[1], c[0]])))) this._geoJSONreduced.features.push(f)
-    // return
-    return this._geoJSONreduced
+    return this._data.reduceGeoJSON(b)
   },
   _visualizeData() {
     const t = this
-    const geoJSON = this._geoJSON
+    const geoJSON = this._data._geoJSON
     // visualize
     if (geoJSON.features.length) {
       // visualize centroids
       if (t._centroids != null) for (let c of t._centroids) c.remove()
       t._centroids = []
       if (t.options.debug) {
-        this._debugStep('visualize centroids', 75)
-        for (let d of t._cells) {
+        this._progress.debugStep('visualize centroids', 75)
+        for (let d of t._data._cells) {
           const circle = L.circle([d.lat, d.lon], {
             color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
             fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
@@ -433,171 +352,15 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   _onReset(e) {
-    if (this._geoJSON === undefined) return
+    if (this._data._geoJSON === undefined) return
     // reset after zooming, etc.
     const geoJSONreduced = this._reduceGeoJSON()
-    if (this._geoJSON.features.length) this._updateRender(geoJSONreduced)
-    if ((!this._bboxData.contains(this._bboxView)) || (this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
-  },
-  _updateScales() {
-    if (!this.options.data || !this.options.data.data) return
-    const t = this
-    const computeScale = (scale, min, max, value) => {
-      if (value == null) return null
-      if (scale.length != 2) return scale
-      let values = Object.values(t.options.data.data).map(x => x[value]).filter(x => x !== null)
-      if (values.length == 0) values = [0]
-      const minComputed = (min) ? min : Math.min(...values)
-      const maxComputed = (max) ? max : Math.max(...values)
-      return scale(minComputed, maxComputed)
-    }
-    this._cellColorScale = computeScale(this.options.cellColorScale, this.options.cellColorMin, this.options.cellColorMax, this.options.cellColorKey)
-    this._cellSizeScale = computeScale(this.options.cellSizeScale, this.options.cellSizeMin, this.options.cellSizeMax, this.options.cellSizeKey)
-  },
-  _cellColor(id, properties) {
-    // return overwritten colour
-    if (id in this._overwriteColor) return this._overwriteColor[id]
-    // no key
-    if (this.options.cellColorKey == null) return this.options.cellColorNoKey
-    // compute value
-    const value = properties[this.options.cellColorKey]
-    // return if empty value
-    if (value == null) return this.options.cellColorNoData
-    // return if no scale
-    if (this._cellColorScale == null) return this.options.cellColorNoKey
-    // compute colour
-    return this._cellColorScale(value)
-  },
-  _cellSize(id, properties, geometry) {
-    let relativeSize
-    // choose overwritten relative size
-    if (id in this._overwriteSize) relativeSize = this._overwriteSize[id]
-    // no key
-    else if (this.options.cellSizeKey == null) relativeSize = this.options.cellSizeNoKey
-    else {
-      // compute value
-      const value = properties[this.options.cellSizeKey]
-      // empty value
-      if (value == null) relativeSize = this.options.cellSizeNoData
-      // no scale
-      else if (this._cellSizeScale == null) relativeSize = this.options.cellSizeNoKey
-      // compute relative size
-      else relativeSize = this._cellSizeScale(value)
-    }
-    // if no resize needed, return geometry
-    if (relativeSize == 1) return geometry
-    // resize geometry
-    const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
-    return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
+    if (this._data._geoJSON.features.length) this._renderer.update(geoJSONreduced)
+    if ((!this._bboxData.contains(this._data._bboxView)) || (this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
   },
   _render() {
-    this._renderRender(this._reduceGeoJSON())
+    this._renderer.render(this._reduceGeoJSON())
   },
-  _addSVG: function(map) {
-    this._svg = d3.select(this._map.getPanes().overlayPane).append('svg').attr('position', 'relative')
-    this._g = this._svg.append('g').attr('class', 'leaflet-zoom-hide')
-  },
-  _removeSVG: function(map) {
-    this._svg.remove()
-  },
-  _renderSVG: function(geoJSON) {
-    this._debugStep('visualize (SVG)', 80)
-    const t = this
-    this._g.selectAll('path').remove()
-    this._visHexagons = this._g.selectAll('path')
-      .data(geoJSON.features)
-      .enter().append('path')
-        .attr('fill', feature => t._cellColor(feature.properties.id, feature.properties))
-        .attr('stroke', t.options.cellContourColor)
-        .attr('stroke-width', t.options.cellContourWidth)
-        .attr('opacity', this.options.cellColorOpacity)
-    this._updateSVG(geoJSON)
-  },
-  _updateSVG: function(geoJSON) {
-    this._debugStep('visualize - update (SVG))', 90)
-    const t = this
-    const projectPoint = function (x, y) {
-      const point = t._map.latLngToLayerPoint(L.latLng(y, x))
-      this.stream.point(point.x, point.y)
-    }
-    const transform = d3.geoTransform({point: projectPoint})
-    const path = d3.geoPath(transform)
-    const bounds = path.bounds(geoJSON)
-    this._svg
-      .attr('width', bounds[1][0] - bounds[0][0])
-      .attr('height', bounds[1][1] - bounds[0][1])
-      .style('left', `${bounds[0][0]}px`)
-      .style('top', `${bounds[0][1]}px`)
-    this._g.attr('transform', `translate(${-bounds[0][0]},${-bounds[0][1]})`)
-    this._visHexagons.attr('d', feature => path({
-      type: feature.type,
-      geometry: {
-        type: feature.geometry.type,
-        coordinates: [
-          t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
-        ],
-      },
-      properties: feature.properties,
-    }))
-    this._debugFinished()
-  },
-  _addWebGL: function(map) {
-    const t = this
-    const pixiColor = color => {
-      const c = d3.color(color).rgb()
-      return PIXI.utils.rgb2hex([c.r / 255, c.g / 255, c.b / 255])
-    }
-    const pixiContainer = new PIXI.Container()
-    const pixiGraphics = new PIXI.Graphics()
-    pixiContainer.addChild(pixiGraphics)
-    let prevZoom
-    let prevOverwriteColor
-    let prevOverwriteSize
-    this._webgl = L.pixiOverlay(utils => {
-      // if no geoJSON present, do nothing
-      if (t._geoJSON == null || t._geoJSON.features == null) return
-      // log
-      const renderer = utils.getRenderer()
-      t._debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`, 90)
-      // collect utils
-      const zoom = utils.getMap().getZoom()
-      const container = utils.getContainer()
-      const project = utils.latLngToLayerPoint
-      const scale = utils.getScale()
-      // colours
-      const cellContourColor = pixiColor(t.options.cellContourColor)
-      // check whether a referesh is need
-      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
-      prevZoom = zoom
-      prevOverwriteColor = JSON.stringify(this._overwriteColor)
-      prevOverwriteSize = JSON.stringify(this._overwriteSize)
-      // if new geoJSON, cleanup and initialize
-      if (t._geoJSON._webgl_initialized == null || needsRefresh) {
-        t._geoJSON._webgl_initialized = true
-        pixiGraphics.clear()
-        pixiGraphics.lineStyle(t.options.cellContourWidth / scale, cellContourColor, 1)
-      }
-      // draw geoJSON features
-      for (const feature of t._geoJSON.features) {
-        const notInitialized = (feature._webgl_coordinates == null)
-        if (notInitialized) feature._webgl_coordinates = t._cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
-        if (notInitialized || needsRefresh) {
-          pixiGraphics.beginFill(pixiColor(t._cellColor(feature.properties.id, feature.properties)), t.options.cellColorOpacity)
-          pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
-          pixiGraphics.endFill()
-        }
-      }
-      renderer.render(container)
-      t._debugFinished()
-    }, pixiContainer).addTo(map)
-  },
-  _removeWebGL: function(map) {
-    this._webgl.remove()
-  },
-  _renderWebGL: function(geoJSON) {
-    this._webgl._update(null)
-  },
-  _updateWebGL: function(geoJSON) {},
 })
 
 L.isea3hLayer = options => new L.ISEA3HLayer(options)
