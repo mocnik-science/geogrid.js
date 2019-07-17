@@ -2,7 +2,7 @@ version: "1"
 rules:
   - base: master
     upstream: mocnik-science:master
-    mergeMethod: none
+    mergeMethod: hardreset
   - base: develop
     upstream: mocnik-science:develop
-    mergeMethod: none
+    mergeMethod: hardreset
