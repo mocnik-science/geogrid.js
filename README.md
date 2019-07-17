@@ -12,7 +12,7 @@ The following publication is related to this plugin and the used DGGS:
 
 ## Related Software
 
-This library is compatible with the framework [**Measures REST**](https://github.com/giscience/measures-rest), which can be used to aggregate data by a grid and then provide the data by a REST interface.  Data can also be aggregated manually by using the library [**geogrid**](https://github.com/giscience/geogrid) that computes and handles Discrete Global Grid Systems (DGGS).
+This library is compatible with the framework [**Measures REST**](https://github.com/giscience/measures-rest), which can be used to aggregate data by a grid and then provide the data by a REST interface.  Data can also be aggregated manually by using the library [**geogrid**](https://github.com/mocnik-science/geogrid) that computes and handles Discrete Global Grid Systems (DGGS).
 
 ## Use the Library
 
