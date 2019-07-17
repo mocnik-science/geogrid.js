@@ -72,7 +72,7 @@ L.isea3hLayer({
 
 ## Example
 
-An example can be found in the subdirectory [example](https://github.com/giscience/measures-rest/tree/master/example).  To run the example, please generate first the file `geogrid.min.js` as described below, and then run:
+An example can be found in the subdirectory [example](https://github.com/mocnik-science/geogrid.js/tree/master/example).  To run the example, please generate first the file `geogrid.min.js` as described below, and then run:
 
 ```bash
 npm run build-example
