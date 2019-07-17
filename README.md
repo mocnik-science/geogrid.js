@@ -16,7 +16,7 @@ This library is compatible with the framework [**Measures REST**](https://github
 
 ## Use the Library
 
-The library `geogrid.js` requires different other libraries to be loaded:
+The library `geogrid.js` requires some other libraries to be loaded:
 
 * [Leaflet](http://leafletjs.com)
 * [PixiJS](http://www.pixijs.com)
