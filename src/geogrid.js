@@ -263,10 +263,10 @@ L.ISEA3HLayer = L.Layer.extend({
         .replace('{resolution}', r)
       for (const p in this.options.parameters) url = url.replace(`{${p}}`, (this.options.parameters[p] !== null) ? this.options.parameters[p] : '')
       if (this.options.debug || !this.options.silent) this._progress.log(url)
-      d3.json(url, data => {
+      d3.json(url).then(data => {
         t.options.data = data
         t._processData()
-      })
+      }).catch(console.debug)
     } else if (this.options.data) this._processData()
   },
   _processData: function() {
