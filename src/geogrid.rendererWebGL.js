@@ -33,10 +33,10 @@ module.exports.RendererWebGL = class RendererWebGL {
       // colours
       const cellContourColor = pixiColor(t._options.cellContourColor)
       // check whether a referesh is need
-      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._overwriteColor) || prevOverwriteSize != JSON.stringify(this._overwriteSize)
+      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._data._overwriteColor) || prevOverwriteSize != JSON.stringify(this._data._overwriteSize)
       prevZoom = zoom
-      prevOverwriteColor = JSON.stringify(this._overwriteColor)
-      prevOverwriteSize = JSON.stringify(this._overwriteSize)
+      prevOverwriteColor = JSON.stringify(this._data._overwriteColor)
+      prevOverwriteSize = JSON.stringify(this._data._overwriteSize)
       // if new geoJSON, cleanup and initialize
       if (t._data._geoJSON._webgl_initialized == null || needsRefresh) {
         t._data._geoJSON._webgl_initialized = true
