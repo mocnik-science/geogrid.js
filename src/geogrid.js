@@ -197,9 +197,9 @@ L.ISEA3HLayer = L.Layer.extend({
     this._updateData()
 
     // plugins
-    this._map.on('mousemove', this._onMouseMove)
-    this._map.on('mouseout', this._onMouseOut)
-    this._map.on('click', this._onClick)
+    this._map.on('mousemove', this._onMouseMove, this)
+    this._map.on('mouseout', this._onMouseOut, this)
+    this._map.on('click', this._onClick, this)
     
     // events
     this._map.on('viewreset', this._onReset, this)
@@ -212,9 +212,9 @@ L.ISEA3HLayer = L.Layer.extend({
     this._webWorker.terminate()
     
     // plugins
-    this._map.off('mousemove', this._onMouseMove)
-    this._map.off('mouseout', this._onMouseOut)
-    this._map.off('click', this._onClick)
+    this._map.off('mousemove', this._onMouseMove, this)
+    this._map.off('mouseout', this._onMouseOut, this)
+    this._map.off('click', this._onClick, this)
     
     // events
     this._map.off('viewreset', this._onReset, this)
