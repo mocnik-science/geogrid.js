@@ -255,8 +255,8 @@ L.ISEA3HLayer = L.Layer.extend({
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 5)
+    const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
     if (this.options.url) {
-      const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
       const r = this._resolutionData = this.options.resolution(this._map.getZoom())
       let url = this.options.url
         .replace('{bbox}', b.toBBoxString())
