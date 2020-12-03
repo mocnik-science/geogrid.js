@@ -320,7 +320,6 @@ L.ISEA3HLayer = L.Layer.extend({
       // visualize cells
       this._render()
     }
-    this._onReset()
     // layer has been initialized
     this._initialized = true
   },
