@@ -82,7 +82,7 @@ L.ISEA3HLayer = L.Layer.extend({
     colorProgressBar: '#ff5151',
     colorDebug: '#1e90ff',
     colorDebugEmphasized: '#f00',
-    attribution: '&copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a>',
+    attribution: 'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>',
     bboxViewPad: 1.05,
     bboxDataPad: 1.25,
     renderer: 'webgl',
