@@ -252,6 +252,9 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _updateData: function() {
     const t = this
+    // check if data can be updated
+    if (!this.options.url && this._updateDataDone) return
+    this._updateDataDone = true
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 5)
