@@ -11,6 +11,20 @@ module.exports.Data = class Data {
     this._overwriteColor = {}
     this._overwriteSize = {}
   }
+  // replaces Math.min(...xs) but also works for very large array
+  _min(xs) {
+    let len = xs.length
+    let min = Infinity
+    while (len--) if (xs[len] < min) min = xs[len]
+    return min
+  }
+  // replaces Math.max(...xs) but also works for very large array
+  _max(xs) {
+    let len = xs.length
+    let max = -Infinity
+    while (len--) if (xs[len] > max) max = xs[len]
+    return max
+  }
   updateScales() {
     if (!this._options.data || !this._options.data.data) return
     const t = this
@@ -19,8 +33,8 @@ module.exports.Data = class Data {
       if (scale.length != 2) return scale
       let values = Object.values(t._options.data.data).map(x => x[value]).filter(x => x !== null)
       if (values.length == 0) values = [0]
-      const minComputed = (min) ? min : Math.min(...values)
-      const maxComputed = (max) ? max : Math.max(...values)
+      const minComputed = (min) ? min : this._min(values)
+      const maxComputed = (max) ? max : this._max(values)
       return scale(minComputed, maxComputed)
     }
     this._cellColorScale = computeScale(this._options.cellColorScale, this._options.cellColorMin, this._options.cellColorMax, this._options.cellColorKey)
