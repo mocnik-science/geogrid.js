@@ -31,8 +31,11 @@ module.exports.Data = class Data {
     const computeScale = (scale, min, max, value) => {
       if (value == null) return null
       if (scale.length != 2) return scale
-      let values = Object.values(t._options.data.data).map(x => x[value]).filter(x => x !== null)
-      if (values.length == 0) values = [0]
+      let values
+      if (!min || !max) {
+        values = Object.values(t._options.data.data).map(x => x[value]).filter(x => x !== null)
+        if (values.length == 0) values = [0]
+      }
       const minComputed = (min) ? min : this._min(values)
       const maxComputed = (max) ? max : this._max(values)
       return scale(minComputed, maxComputed)
