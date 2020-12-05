@@ -252,9 +252,6 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _updateData: function() {
     const t = this
-    // check if data can be updated
-    if (!this.options.url && this._updateDataDone) return
-    this._updateDataDone = true
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 5)
@@ -354,10 +351,12 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _onReset(e) {
     if (this._data._geoJSON === undefined) return
-    // reset after zooming, etc.
-    const geoJSONreduced = this._reduceGeoJSON()
-    if (this._data._geoJSON.features.length) this._renderer.update(geoJSONreduced)
-    if ((!this._bboxData.contains(this._data._bboxView)) || (this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
+    // reset after zooming, panning, etc.
+    if (!this._bboxData.contains(this._data._bboxView) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
+    else {
+      const geoJSONreduced = this._reduceGeoJSON()
+      if (this._data._geoJSON.features.length) this._renderer.update(geoJSONreduced)
+    }
   },
   _render() {
     this._renderer.render(this._reduceGeoJSON())
