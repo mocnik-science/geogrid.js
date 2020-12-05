@@ -250,6 +250,9 @@ L.ISEA3HLayer = L.Layer.extend({
       idLong: cell.idLong,
     })
   },
+  _paddedBounds() {
+    return this._map.getBounds().pad(this.options.bboxViewPad - 1)
+  },
   _updateData: function() {
     const t = this
     // download the data
@@ -295,8 +298,7 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _reduceGeoJSON() {
     this._progress.debugStep('reduce GeoJSON for area', 70)
-    const b = this._map.getBounds().pad(this.options.bboxViewPad - 1)
-    return this._data.reduceGeoJSON(b)
+    return this._data.reduceGeoJSON(this._paddedBounds())
   },
   _visualizeData() {
     const t = this
@@ -353,10 +355,10 @@ L.ISEA3HLayer = L.Layer.extend({
   _onReset(e) {
     if (this._data._geoJSON === undefined) return
     // reset after zooming, panning, etc.
-    if (!this._bboxData.contains(this._data._bboxView) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
+    if (!this._bboxData.contains(this._paddedBounds()) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
     else {
       const geoJSONreduced = this._reduceGeoJSON()
-      if (this._data._geoJSON.features.length) this._renderer.update(geoJSONreduced)
+      if (geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)
     }
   },
   _render() {
