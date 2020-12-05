@@ -91,9 +91,6 @@ L.ISEA3HLayer = L.Layer.extend({
   initialize: function(options) {
     this._initialized = false
 
-    // init progress
-    this._progress = new Progress(this.options)
-
     // init options
     L.Util.setOptions(this, options)
     if (this.options.debug) this.options.silent = false
@@ -112,6 +109,9 @@ L.ISEA3HLayer = L.Layer.extend({
     }
     this._cellColorScale = null
     this._cellSizeScale = null
+
+    // init progress
+    this._progress = new Progress(this.options)
 
     // init plugins
     this._plugins = []

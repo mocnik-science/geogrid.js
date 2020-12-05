@@ -13,7 +13,6 @@ module.exports.Progress = class Progress {
     this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
     document.getElementsByTagName('body')[0].appendChild(this._progressBar)
     this.progress(100)
-
   }
   remove() {
     clearTimeout(this._progresBarTimeoutReset)
@@ -49,7 +48,7 @@ module.exports.Progress = class Progress {
     if (percent !== null) this.progress(percent)
     if (!this.options.silent) {
       const t = (new Date()).getTime()
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${t - this._debugTimestamp}ms)`)
+      if (this._debugTimestamp != null && this._debugTitle != null) this.log(`${this._debugTitle} (${t - this._debugTimestamp}ms)`)
       this._debugTimestamp = t
       this._debugTitle = title
     }
@@ -57,7 +56,7 @@ module.exports.Progress = class Progress {
   debugFinished() {
     this.progress(100)
     if (!this.options.silent) {
-      if (this._debugTimestamp != null && this._debugTitle != null) this._log(`${this._debugTitle} (${(new Date()).getTime() - this._debugTimestamp}ms)`)
+      if (this._debugTimestamp != null && this._debugTitle != null) this.log(`${this._debugTitle} (${(new Date()).getTime() - this._debugTimestamp}ms)`)
       this._debugTimestamp = null
       this._debugTitle = null
     }
