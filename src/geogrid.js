@@ -243,7 +243,7 @@ L.ISEA3HLayer = L.Layer.extend({
     delete this._pluginCallbacks[uid]
   },
   _neighbors: function(cell, callback) {
-    this._webWorker.postMessage({
+    this._webWorkerPostMessage({
       task: 'findNeighbors',
       taskResult: 'resultFindNeighbors',
       uid: this._storePluginCallback(callback),
@@ -267,15 +267,16 @@ L.ISEA3HLayer = L.Layer.extend({
         t.options.data = data
         t._processData()
       }).catch(console.debug)
-    } else if (this.options.data) this._processData()
+    } else if (this.options.data) this._processData(this._dataAlreadySend != true)
+    this._dataAlreadySend = true
   },
-  _processData: function() {
+  _processData: function(sendData=true) {
     // update scales
     this._data.updateScales()
     // call web worker
-    this._webWorker.postMessage({
+    this._webWorkerPostMessage({
       task: 'computeCells',
-      json: this.options.data,
+      json: sendData ? this.options.data : null,
       url: document.location.href,
       bbox: {
         north: this._bboxData.getNorth(),
@@ -324,7 +325,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._initialized = true
   },
   _onMouseMove(e) {
-    if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+    if (this._pluginsOnHover && this._initialized) this._webWorkerPostMessage({
       task: 'findCell',
       taskResult: 'resultPluginsHover',
       lat: e.latlng.lat,
@@ -342,7 +343,7 @@ L.ISEA3HLayer = L.Layer.extend({
     this._hoveredCells = []
   },
   _onClick(e) {
-    if (this._pluginsOnHover && this._initialized) this._webWorker.postMessage({
+    if (this._pluginsOnHover && this._initialized) this._webWorkerPostMessage({
       task: 'findCell',
       taskResult: 'resultPluginsClick',
       lat: e.latlng.lat,
@@ -361,6 +362,9 @@ L.ISEA3HLayer = L.Layer.extend({
   _render() {
     this._renderer.render(this._reduceGeoJSON())
   },
+  _webWorkerPostMessage(d) {
+    this._webWorker.postMessage(JSON.stringify(d))
+  }
 })
 
 L.isea3hLayer = options => new L.ISEA3HLayer(options)

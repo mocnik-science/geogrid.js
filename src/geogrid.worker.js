@@ -4,20 +4,24 @@
 module.exports.isea3hWorker = () => {
   importScripts('./vptree.js/vptree.min.js')
 
+  // cache
+ let json = null
+
   // helping functions
-  const log = message => postMessage({task: 'log', message: message})
-  const error = message => {throw message}
+  const log = (...message) => postMessage({task: 'log', message: message.join(' ')})
+  const error = (...message) => {throw message.join(' ')}
   const progress = percent => postMessage({task: 'progress', percent: percent})
   const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
 
   // message handler
   onmessage = e => {
-    const d = e.data
+    const d = JSON.parse(e.data)
     switch (d.task) {
       case 'computeCells':
+        if (d.json !== null) json = d.json
         postMessage({
           task: 'resultComputeCells',
-          cells: computeGeoJSON(d.json, d.bbox),
+          cells: computeGeoJSON(json, d.bbox),
         })
         break
       case 'findCell':
