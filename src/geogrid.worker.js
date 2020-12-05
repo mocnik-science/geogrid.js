@@ -77,8 +77,11 @@ module.exports.isea3hWorker = () => {
     data = []
     const minLonN = Math.floor((bbox.west + 180) / 360)
     const maxLonN = Math.ceil((bbox.east - 180) / 360)
-    const west = bbox.west - 5
-    const east = bbox.east + 5
+    const diameterCell = Math.pow(1 / Math.sqrt(3), json.resolution - 1) * 36 * 2 / 3
+    const west = bbox.west - diameterCell
+    const east = bbox.east + diameterCell
+    const south = bbox.south - diameterCell
+    const north = bbox.north + diameterCell
     const repeatNumber = Math.ceil((bbox.east - bbox.west) / 360)
     const explicitLatLon = json.data.length > 0 && json.data[0].lat !== undefined
     for (let i = minLonN; i <= maxLonN; i++) for (let d of json.data) {
@@ -99,7 +102,7 @@ module.exports.isea3hWorker = () => {
         if (partB >= 44) lon *= -1
       }
       const lonNew = lon + i * 360
-      if (west <= lonNew && lonNew <= east) {
+      if (west <= lonNew && lonNew <= east && south <= lat && lat <= north) {
         dNew = {
           idLong: `${d.id}_${i}`,
           lat: lat,
