@@ -153,10 +153,10 @@ The following plugins are available:
 
 ### General Structure of a Plugin
 
-Plugins extend the class `ISEA3HLayerPlugin`.  Several methods exist that can be overwritten in order to react to certain events.  A plugin can, for example, be implemented as follows:
+Plugins extend the class `L.ISEA3HLayerPlugin`.  Several methods exist that can be overwritten in order to react to certain events.  A plugin can, for example, be implemented as follows:
 
 ```javascript
-class TestPlugin extends ISEA3HLayerPlugin {
+class TestPlugin extends L.ISEA3HLayerPlugin {
   onHover(e) {
     console.debug('hover', e.cell.id, e.cell.value)
   }
@@ -214,7 +214,7 @@ onHover(e) {
 }
 ```
 
-The following methods of the `ISEA3HLayerPlugin` are available:
+The following methods of the `L.ISEA3HLayerPlugin` are available:
 
 | Method | Description |
 | ------ | ----------- |
