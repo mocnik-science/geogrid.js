@@ -4,28 +4,33 @@
 module.exports.isea3hWorker = () => {
   importScripts('./vptree.js/vptree.min.js')
 
-  // cache
- let json = null
-
   // helping functions
-  const log = (...message) => postMessage({task: 'log', message: message.join(' ')})
+  const _postMessage = x => postMessage(JSON.stringify(x))
+  
+  const log = (...message) => _postMessage({task: 'log', message: message.join(' ')})
   const error = (...message) => {throw message.join(' ')}
-  const progress = percent => postMessage({task: 'progress', percent: percent})
-  const debugStep = (title, percent) => postMessage({task: 'debugStep', title: title, percent: percent})
+  const progress = percent => _postMessage({task: 'progress', percent: percent})
+  const debugStep = (title, percent) => _postMessage({task: 'debugStep', title: title, percent: percent})
 
+  const parseIntFast = str => {
+    let r = str.charCodeAt(0) - 48
+    const strLength = str.length
+    for (let i = 1; i < strLength; i++) r = 10 * r + str.charCodeAt(i) - 48
+    return r
+  }
+  
   // message handler
   onmessage = e => {
     const d = JSON.parse(e.data)
     switch (d.task) {
       case 'computeCells':
-        if (d.json !== null) json = d.json
-        postMessage({
+        _postMessage({
           task: 'resultComputeCells',
-          cells: computeGeoJSON(json, d.bbox),
+          cells: computeGeoJSON(d.json, d.bbox),
         })
         break
       case 'findCell':
-        postMessage({
+        _postMessage({
           task: d.taskResult,
           cell: findCell(d.lat, d.lon),
           lat: d.lat,
@@ -33,7 +38,7 @@ module.exports.isea3hWorker = () => {
         })
         break
       case 'findNeighbors':
-        postMessage({
+        _postMessage({
           task: 'resultFindNeighbors',
           uid: d.uid,
           neighbors: findNeighbors(d.idLong),
@@ -50,6 +55,8 @@ module.exports.isea3hWorker = () => {
   let cacheNeighbors = {}
   let cacheVertices = {}
   let keysToCopy = []
+  let resolution = null
+  let dataAll = null
   let data = null
   let cells = null
   let tree = null
@@ -70,51 +77,57 @@ module.exports.isea3hWorker = () => {
   // compute GeoJSON
   const computeGeoJSON = (json, bbox) => {
     // handle errors
-    if (json == null) error('data error - no data')
-    if (json.error) error(`data error - ${json.message}`)
+    if (json === null && dataAll === null) error('data error - no data')
+    if (json !== null && json.error) error(`data error - ${json.message}`)
 
-    // get properties to copy
-    keysToCopy = (json.data.length > 0) ? Object.keys(json.data[0]).filter(k => !(k in ['lat', 'lon'])) : []
+    if (json !== null) {
+      // determine properties to copy
+      keysToCopy = (json.data.length > 0) ? Object.keys(json.data[0]).filter(k => !(k in ['lat', 'lon'])) : []
+
+      // save resolution
+      resolution = json.resolution
+
+      // parse cell IDs
+      debugStep('parse cell IDs', 10)
+      dataAll = []
+      for (const d of json.data) {
+        if (d.lat === undefined) {
+          d.isPentagon = d.id.startsWith('-')
+          let idWithoutSign = d.isPentagon ? d.id.substr(1) : d.id
+          if (idWithoutSign.length % 2 == 0) idWithoutSign = '0' + idWithoutSign
+          const numberOfDecimalPlaces = (idWithoutSign.length - 2 - 5) / 2
+          d.lat = parseIntFast(idWithoutSign.substr(2, numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
+          d.lon = parseIntFast(idWithoutSign.substr(2 + numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
+          const partB = parseIntFast(idWithoutSign.substr(0, 2))
+          if ((partB >= 22 && partB < 44) || partB >= 66) d.lat *= -1
+          if (partB >= 44) d.lon *= -1
+        }
+        dataAll.push(d)
+      }
+    }
 
     // make data complete by repetition
     debugStep('make data complete by repetition', 10)
     data = []
     const minLonN = Math.floor((bbox.west + 180) / 360)
     const maxLonN = Math.ceil((bbox.east - 180) / 360)
-    const diameterCell = Math.pow(1 / Math.sqrt(3), json.resolution - 1) * 36 * 2 / 3
+    const diameterCell = Math.pow(1 / Math.sqrt(3), resolution - 1) * 36 * 2 / 3
     const west = bbox.west - diameterCell
     const east = bbox.east + diameterCell
     const south = bbox.south - diameterCell
     const north = bbox.north + diameterCell
     const repeatNumber = Math.ceil((bbox.east - bbox.west) / 360)
-    const explicitLatLon = json.data.length > 0 && json.data[0].lat !== undefined
-    for (let i = minLonN; i <= maxLonN; i++) for (let d of json.data) {
-      const isPentagon = d.id.startsWith('-')
-      let lon
-      let lat
-      if (explicitLatLon) {
-        lon = d.lon
-        lat = d.lat
-      } else {
-        let idWithoutSign = (isPentagon) ? d.id.substr(1) : d.id
-        if (idWithoutSign.length % 2 == 0) idWithoutSign = '0' + idWithoutSign
-        const numberOfDecimalPlaces = (idWithoutSign.length - 2 - 5) / 2
-        lat = parseInt(idWithoutSign.substr(2, numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
-        lon = parseInt(idWithoutSign.substr(2 + numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
-        const partB = parseInt(idWithoutSign.substr(0, 2))
-        if ((partB >= 22 && partB < 44) || partB >= 66) lat *= -1
-        if (partB >= 44) lon *= -1
-      }
-      const lonNew = lon + i * 360
-      if (west <= lonNew && lonNew <= east && south <= lat && lat <= north) {
+    for (let i = minLonN; i <= maxLonN; i++) for (const d of dataAll) {
+      const lonNew = d.lon + i * 360
+      if (west <= lonNew && lonNew <= east && south <= d.lat && d.lat <= north) {
         dNew = {
           idLong: `${d.id}_${i}`,
-          lat: lat,
+          lat: d.lat,
           lon: lonNew,
-          sinLat: Math.sin(lat * rad),
-          cosLat: Math.cos(lat * rad),
+          sinLat: Math.sin(d.lat * rad),
+          cosLat: Math.cos(d.lat * rad),
           lonN: i,
-          isPentagon: isPentagon,
+          isPentagon: d.isPentagon,
           neighbors: cacheNeighbors[d.id],
           vertices: cacheVertices[d.id],
         }

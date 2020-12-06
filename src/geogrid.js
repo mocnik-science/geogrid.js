@@ -140,7 +140,7 @@ L.ISEA3HLayer = L.Layer.extend({
     const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts(\'./vptree.js/vptree.min.js\')', `importScripts('${url}/vptree.js/vptree.min.js')`)
     this._webWorker = new Worker(URL.createObjectURL(new Blob([workerFunctionString])))
     this._webWorker.addEventListener('message', e => {
-      const d = e.data
+      const d = JSON.parse(e.data)
       switch (d.task) {
         case 'log':
           this._progress.log(d.message)
@@ -277,6 +277,7 @@ L.ISEA3HLayer = L.Layer.extend({
     // update scales
     this._data.updateScales()
     // call web worker
+    this._progress.debugStep('send data to web worker', 8)
     this._webWorkerPostMessage({
       task: 'computeCells',
       json: sendData ? this.options.data : null,
