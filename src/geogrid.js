@@ -257,7 +257,7 @@ L.ISEA3HLayer = L.Layer.extend({
     const t = this
     // download the data
     this._progress.showProgress()
-    this._progress.debugStep('download data', 5)
+    this._progress.debugStep('download data', 2.5)
     const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
     if (this.options.url) {
       const r = this._resolutionData = this.options.resolution(this._map.getZoom())
@@ -270,17 +270,19 @@ L.ISEA3HLayer = L.Layer.extend({
         t.options.data = data
         t._processData()
       }).catch(console.debug)
-    } else if (this.options.data) this._processData(this._dataAlreadySend != true)
-    this._dataAlreadySend = true
+    } else this._processData()
   },
-  _processData: function(sendData=true) {
+  _processData: function() {
     // update scales
     this._data.updateScales()
+    // cache the data
+    this._progress.debugStep('cache the data', 6)
+    const data = this._data.cacheData()
     // call web worker
     this._progress.debugStep('send data to web worker', 8)
     this._webWorkerPostMessage({
       task: 'computeCells',
-      json: sendData ? this.options.data : null,
+      json: data,
       url: document.location.href,
       bbox: {
         north: this._bboxData.getNorth(),

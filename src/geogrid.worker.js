@@ -54,7 +54,6 @@ module.exports.isea3hWorker = () => {
   // caches
   let cacheNeighbors = {}
   let cacheVertices = {}
-  let keysToCopy = []
   let resolution = null
   let dataAll = null
   let data = null
@@ -70,7 +69,6 @@ module.exports.isea3hWorker = () => {
       isPentagon: c.isPentagon,
     }
     if (c.filtered !== false) cell.vertices = c.vertices
-    for (k of keysToCopy) cell[k] = c[k]
     return cell
   }
 
@@ -81,9 +79,6 @@ module.exports.isea3hWorker = () => {
     if (json !== null && json.error) error(`data error - ${json.message}`)
 
     if (json !== null) {
-      // determine properties to copy
-      keysToCopy = (json.data.length > 0) ? Object.keys(json.data[0]).filter(k => !(k in ['lat', 'lon'])) : []
-
       // save resolution
       resolution = json.resolution
 
@@ -91,18 +86,20 @@ module.exports.isea3hWorker = () => {
       debugStep('parse cell IDs', 10)
       dataAll = []
       for (const d of json.data) {
-        if (d.lat === undefined) {
-          d.isPentagon = d.id.startsWith('-')
-          let idWithoutSign = d.isPentagon ? d.id.substr(1) : d.id
+        if (d.lat !== undefined) dataAll.push(d)
+        else {
+          const d2 = {id: d}
+          d2.isPentagon = d2.id.startsWith('-')
+          let idWithoutSign = d2.isPentagon ? d2.id.substr(1) : d2.id
           if (idWithoutSign.length % 2 == 0) idWithoutSign = '0' + idWithoutSign
           const numberOfDecimalPlaces = (idWithoutSign.length - 2 - 5) / 2
-          d.lat = parseIntFast(idWithoutSign.substr(2, numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
-          d.lon = parseIntFast(idWithoutSign.substr(2 + numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
+          d2.lat = parseIntFast(idWithoutSign.substr(2, numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
+          d2.lon = parseIntFast(idWithoutSign.substr(2 + numberOfDecimalPlaces + 2)) / Math.pow(10, numberOfDecimalPlaces)
           const partB = parseIntFast(idWithoutSign.substr(0, 2))
-          if ((partB >= 22 && partB < 44) || partB >= 66) d.lat *= -1
-          if (partB >= 44) d.lon *= -1
+          if ((partB >= 22 && partB < 44) || partB >= 66) d2.lat *= -1
+          if (partB >= 44) d2.lon *= -1
+          dataAll.push(d2)
         }
-        dataAll.push(d)
       }
     }
 
@@ -121,6 +118,7 @@ module.exports.isea3hWorker = () => {
       const lonNew = d.lon + i * 360
       if (west <= lonNew && lonNew <= east && south <= d.lat && d.lat <= north) {
         dNew = {
+          id: d.id,
           idLong: `${d.id}_${i}`,
           lat: d.lat,
           lon: lonNew,
@@ -130,7 +128,6 @@ module.exports.isea3hWorker = () => {
           isPentagon: d.isPentagon,
           vertices: cacheVertices[d.id],
         }
-        for (k of keysToCopy) dNew[k] = d[k]
         data.push(dNew)
       }
     }

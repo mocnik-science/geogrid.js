@@ -4,6 +4,7 @@
 module.exports.Data = class Data {
   constructor(options) {
     this._options = options
+    this._dataById = null
     this._cells = []
     this._geoJSON = null
     
@@ -79,13 +80,36 @@ module.exports.Data = class Data {
     const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
     return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
   }
+  cacheData() {
+    if (this._options.data === null) return null
+    this._dataById = new Map()
+    const ds = this._options.data.data
+    this._options.data.data = new Array(ds.length)
+    for (let i = 0; i < ds.length; i++) {
+      const d = ds[i]
+      this._dataById.set(d.id, d)
+      if (d.lat !== undefined) {
+        this._options.data.data[i] = {
+          id: d.id,
+          lat: d.lat,
+          lon: d.lon,
+        }
+        if (d.isPentagon !== undefined) this._options.data.data[i].isPentagon = d.isPentagon
+      }
+      this._options.data.data[i] = d.id
+    }
+    const json = this._options.data
+    this._options.data = null
+    return json
+  }
   produceGeoJSON() {
+    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['id', 'lat', 'lon', 'isPentagon'].includes(k)) : []
     const features = []
-    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._cells[0]).filter(k => !(k in ['lat', 'lon', 'isPentagon'])) : []
     for (let c of this._cells) {
       if (c.vertices !== undefined) {
         const properties = {}
-        for (const k of keysToCopy) properties[k] = c[k]
+        const d = this._dataById.get(c.id)
+        for (const k of keysToCopy) properties[k] = d[k]
         features.push({
           type: 'Feature',
           geometry: {
