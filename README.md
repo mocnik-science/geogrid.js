@@ -158,13 +158,13 @@ Plugins extend the class `L.ISEA3HLayerPlugin`.  Several methods exist that can 
 ```javascript
 class TestPlugin extends L.ISEA3HLayerPlugin {
   onHover(e) {
-    console.debug('hover', e.cell.id, e.cell.value)
+    console.debug('hover', e.cell.id, e.data.value)
   }
   onUnhover(e) {
-    console.debug('unhover', e.cell.id, e.cell.value)
+    console.debug('unhover', e.cell.id, e.data.value)
   }
   onClick(e) {
-    console.debug('click', e.cell.id, e.cell.value)
+    console.debug('click', e.cell.id, e.data.value)
   }
   ...
 }

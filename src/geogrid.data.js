@@ -125,6 +125,13 @@ module.exports.Data = class Data {
       features: features,
     }
   }
+  dataForId(id) {
+    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['id', 'lat', 'lon', 'isPentagon'].includes(k)) : []
+    const d = this._dataById.get(id)
+    const properties = {}
+    for (const k of keysToCopy) properties[k] = d[k]
+    return properties
+  }
   reduceGeoJSON(b) {
     // return cached GeoJSON in case of unchanged bounds
     if (b.equals(this._bboxView)) return this._geoJSONreduced

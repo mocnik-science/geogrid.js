@@ -129,6 +129,14 @@ L.ISEA3HLayer = L.Layer.extend({
       this._renderer = new RendererWebGL(this.options, this._progress, this._data)
     }
 
+    // event for plugin
+    const eventForPlugin = cell => ({
+      lat: cell.lat,
+      lon: cell.lon,
+      cell: cell,
+      data: this._data.dataForId(cell.id),
+    })
+
     // create web worker
     let url = null
     if (this.options.urlLibs.startsWith('http')) url = this.options.urlLibs
@@ -160,33 +168,21 @@ L.ISEA3HLayer = L.Layer.extend({
           break
         case 'resultPluginsHover':
           if (!this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
-            const ePlugin = {
-              lat: d.lat,
-              lon: d.lon,
-              cell: d.cell,
-            }
             for (const cell of this._hoveredCells) {
-              const ePlugin2 = {
-                lat: d.lat,
-                lon: d.lon,
-                cell: cell,
-              }
-              if (cell.idLong !== ePlugin.cell.idLong) for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin2)
+              const ePlugin = eventForPlugin(cell)
+              if (cell.idLong !== d.cell.idLong) for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
             }
+            const ePlugin = eventForPlugin(d.cell)
             this._hoveredCells = [d.cell]
             for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
           }
           break
         case 'resultPluginsClick':
-          const ePlugin = {
-            lat: d.lat,
-            lon: d.lon,
-            cell: d.cell,
-          }
+          const ePlugin = eventForPlugin(d)
           for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
           break
         case 'resultFindNeighbors':
-          this._execPluginCallback(d.uid, d.neighbors)
+          this._execPluginCallback(d.uid, d.neighbors.map(cell => eventForPlugin(cell)))
           break
       }
     })

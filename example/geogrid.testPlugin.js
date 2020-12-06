@@ -17,7 +17,7 @@ L.TestPlugin = class TestPlugin extends L.ISEA3HLayerPlugin {
     this.neighbors(e.cell, ns => console.debug(ns))
     // this.setParameter('dateFrom', '2017-01-01')
     // this.downloadData()
-    // console.debug('click', e.cell.id, e.cell.value)
+    // console.debug('click', e.cell.id, e.data.value)
   }
 }
 
