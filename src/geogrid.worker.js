@@ -128,7 +128,6 @@ module.exports.isea3hWorker = () => {
           cosLat: Math.cos(d.lat * rad),
           lonN: i,
           isPentagon: d.isPentagon,
-          neighbors: cacheNeighbors[d.id],
           vertices: cacheVertices[d.id],
         }
         for (k of keysToCopy) dNew[k] = d[k]
@@ -141,19 +140,21 @@ module.exports.isea3hWorker = () => {
     const Mathmin = (a, b) => (a < b) ? a : b
     tree = VPTreeFactory.build(data, (d0, d1) => Math.acos(Mathmin(d0.sinLat * d1.sinLat + d0.cosLat * d1.cosLat * Math.cos((d1.lon - d0.lon) * rad), 1)))
 
-    // collect the data needed for a cell
-    // in particular: find neighbours for the cells
-    debugStep('collect the data needed for a cell', 20)
+    // find neighbours for the cells
+    debugStep('find neighbours for the cells', 20)
     cells = {}
-    for (let d of data) {
+    for (const d of data) {
       const numberOfNeighborsToLookFor = d.isPentagon ? 5 : 6
-      if (d.neighbors == undefined) {
+      const ns = (d.isPentagon) ? undefined : cacheNeighbors[d.idLong]
+      if (ns !== undefined) d.neighbors = ns
+      else {
         d.neighbors = []
         for (let x of tree.search(d, 6 * (repeatNumber + 1) + 1).splice(1)) {
           const n = data[x.i]
           if (n.id !== d.id && Math.abs(d.lon - n.lon) < 180) d.neighbors.push(n.idLong)
           if (d.neighbors.length >= numberOfNeighborsToLookFor) break
         }
+        cacheNeighbors[d.id] = d.neighbors
       }
       cells[d.idLong] = d
     }
@@ -165,19 +166,20 @@ module.exports.isea3hWorker = () => {
       const c = cells[id]
       if (c.vertices !== undefined) continue
       let numberOfMatchingNeighbors = 0
-      for (let id2 of c.neighbors) if (cells[id2].neighbors.indexOf(id) >= 0) numberOfMatchingNeighbors++
+      for (const id2 of c.neighbors) if (cells[id2] !== undefined && cells[id2].neighbors.indexOf(id) >= 0) numberOfMatchingNeighbors++
       if (numberOfMatchingNeighbors < (c.isPentagon ? 5 : 6)) c.filtered = false
     }
 
     // compute angles and vertices
     debugStep('compute angles and vertices', 45)
-    for (let id in cells) {
+    for (const id in cells) {
       const c = cells[id]
       if (c.filtered === false || c.vertices !== undefined) continue
       c.angles = []
       // compute angles
       for (let id2 of c.neighbors) {
         let n = cells[id2]
+        if (n === undefined) continue
         const ncLon = (n.lon - c.lon) * rad
         c.angles.push({
           angle: Math.atan2(Math.sin(ncLon) * n.cosLat, c.cosLat * n.sinLat - c.sinLat * n.cosLat * Math.cos(ncLon)),
@@ -199,10 +201,9 @@ module.exports.isea3hWorker = () => {
     // filter cells II
     // filter cells by their distortion
     debugStep('filter cells II', 50)
-    for (let id in cells) {
+    for (const id in cells) {
       const c = cells[id]
-      if (c.filtered === false) continue
-      else if (c.isPentagon) continue
+      if (c.filtered === false || c.isPentagon) continue
       else {
         let filter = true
         for (let i = 0; i < 6; i++) {
@@ -219,13 +220,12 @@ module.exports.isea3hWorker = () => {
     }
 
     // cache neighbours
-    debugStep('cache neighbours', 55)
-    for (let id in cells) cacheNeighbors[id] = cells[id].neighbors
-
-    // cache vertices
-    debugStep('cache vertices', 57.5)
-    for (let id in cells) cacheVertices[id] = cells[id].vertices
-
+    debugStep('cache neighbours and vertices', 55)
+    for (const id in cells) if (cells[id].filtered != false) {
+      cacheNeighbors[id] = cells[id].neighbors
+      cacheVertices[id] = cells[id].vertices
+    }
+    
     // clean up data about cells
     debugStep('clean up data about cells', 60)
     const cells2 = new Array(cells.length)
@@ -235,6 +235,9 @@ module.exports.isea3hWorker = () => {
       cells2[i] = cleanupCell(cells[id])
     }
 
+    // send data to browser
+    debugStep('send data to browser', 62.5)
+    
     return cells2
   }
 
