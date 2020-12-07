@@ -73,13 +73,14 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   options: defaultOptions,
   initialize: function(options) {
     this._initialized = false
+    this._map = null
 
     // init options I
     L.Util.setOptions(this, options)
 
     // event listener for web worker
     const eventListener = d => {
-      switch (d.task) {
+      if (this._map) switch (d.task) {
         case 'resultPluginsHover':
           if (!this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
             for (const cell of this._hoveredCells) {
@@ -160,6 +161,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._map.off('viewreset', this._onReset, this)
     this._map.off('zoomend', this._onReset, this)
     this._map.off('moveend', this._onReset, this)
+
+    this._map = null
   },
   addPlugin: function(plugin) {
     plugin.onAdd(this)
@@ -285,7 +288,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (!this._bboxData.contains(this._paddedBounds()) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
     else {
       const geoJSONreduced = this._reduceGeoJSON()
-      if (geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)
+      if (geoJSONreduced && geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)
     }
   },
   _render() {
