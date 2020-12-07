@@ -18,6 +18,20 @@ module.exports.isea3hWorker = () => {
     for (let i = 1; i < strLength; i++) r = 10 * r + str.charCodeAt(i) - 48
     return r
   }
+  // replaces Math.min(...xs) but also works for very large array
+  const _min = (xs) => {
+    let len = xs.length
+    let min = Infinity
+    while (len--) if (xs[len] < min) min = xs[len]
+    return min
+  }
+  // replaces Math.max(...xs) but also works for very large array
+  const _max = (xs) => {
+    let len = xs.length
+    let max = -Infinity
+    while (len--) if (xs[len] > max) max = xs[len]
+    return max
+  }
   
   // message handler
   onmessage = e => {
@@ -106,6 +120,12 @@ module.exports.isea3hWorker = () => {
     // make data complete by repetition
     debugStep('make data complete by repetition', 10)
     data = []
+    if (bbox === undefined) bbox = {
+      west: _min(dataAll.map(d => d.lon)),
+      east: _max(dataAll.map(d => d.lon)),
+      south: _min(dataAll.map(d => d.lat)),
+      north: _max(dataAll.map(d => d.lat)),
+    }
     const minLonN = Math.floor((bbox.west + 180) / 360)
     const maxLonN = Math.ceil((bbox.east - 180) / 360)
     const diameterCell = Math.pow(1 / Math.sqrt(3), resolution - 1) * 36 * 2 / 3

@@ -228,6 +228,19 @@ The following methods of the `L.ISEA3HLayerPlugin` are available:
 | `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
 | `resetCellSize()` | Computes the relative size of all grid cells by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
 
+## Compute GeoJSON only
+
+In some cases, one might not want to visualize grid data by the use of Leaflet but to only compute the corresponding GeoJSON.  The library thus provides a corresponding function to compute the GeoJSON in an efficient way.  For this, neither of the libraries needs to be loaded.  Only [vptree.js library](http://fpirsch.github.io/vptree.js/) is needed in the corresponding directory, per default `/libs`.  For data formatted as described at the top of this page, the GeoJSON can be computed as follows:
+
+```javascript
+L.isea3hToGeoJSON({
+  data: data,
+  urlLibs: 'libs',
+}, geoJSON => console.log(geoJSON))
+```
+
+Note that the result is communicated by a callback, and that many options have no effect in this case.
+
 ## Build geogrid.min.js
 
 The library can be translated from [ECMAScript 6](https://en.wikipedia.org/wiki/ECMAScript) to minified JavaScript, which results in a file `geogrid.min.js`.  In order to generate this minified file, you have to install [Node.js](https://nodejs.org/) first.  Thereafter, you have to execute the following commands:

@@ -1,17 +1,39 @@
 "use strict"
 
-require('./geogrid.scss')
-const Data = require('./geogrid.data.js').Data
-const Progress = require('./geogrid.progress.js').Progress
-const RendererWebGL = require('./geogrid.rendererWebGL.js').RendererWebGL
-const RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG
-const isea3hWorker = require('./geogrid.worker.js').isea3hWorker
+/****** CHECK EXTERNAL LIBRARIES LOADED ******/
+const leafletLoaded = typeof L !== 'undefined'
+const d3Loaded = typeof d3 !== 'undefined'
+if (!leafletLoaded) {
+  console.log('[geogrid.js] Leaflet needs to be loaded first / only pure functions available')
+  window.L = {}
+}
+if (!d3Loaded) console.log('[geogrid.js] D3.js needs to be loaded first / only pure functions available')
 
-if (typeof L === 'undefined') throw '[geogrid.js] Leaflet needs to be loaded first'
-if (typeof d3 === 'undefined') throw '[geogrid.js] D3.js needs to be loaded first'
+/****** IMPORTS ******/
+let RendererWebGL
+let RendererSVG
+if (leafletLoaded && d3Loaded) {
+  require('./geogrid.scss')
+  RendererWebGL = require('./geogrid.rendererWebGL.js').RendererWebGL
+  RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG  
+}
+const defaultOptions = require('./geogrid.core.js').defaultOptions
+const initCore = require('./geogrid.core.js').initCore
+
+/****** PURE FUNCTION ******/
+L.isea3hToGeoJSON = (options, callback) => {
+  // set options
+  options = Object.assign({}, () => {}, defaultOptions, options)
+
+  // init core
+  const {_processDataInWebWorker} = initCore(options, d => {}, callback, false)
+
+  // process
+  _processDataInWebWorker()
+}
 
 /****** PLUGIN ******/
-L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
+if (leafletLoaded && d3Loaded) L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
   onAdd(layer) {
     this._layer = layer
   }
@@ -31,141 +53,33 @@ L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
     this._layer.options.parameters[parameter] = value
   }
   setCellColor(cell, value) {
-    if (value) this._layer._data._overwriteColor[cell.id] = value
-    else delete this._layer._data._overwriteColor[cell.id]
+    if (value) this._layer._data.overwriteColor(cell.id, value)
+    else this._layer._data.overwriteColor(cell.id, null)
   }
   resetCellColor() {
-    this._layer._data._overwriteColor = {}
+    this._layer._data.resetOverwriteColor()
   }
   setCellSize(cell, value) {
-    if (value) this._layer._data._overwriteSize[cell.id] = value
-    else delete this._layer._data._overwriteSize[cell.id]
+    if (value) this._layer._data.overwriteSize(cell.id, value)
+    else this._layer._data.overwriteSize(cell.id, null)
   }
   resetCellSize() {
-    this._layer._data._overwriteSize = {}
+    this._layer._data.resetOverwriteSize()
   }
 }
 
 /****** LAYER ******/
-L.ISEA3HLayer = L.Layer.extend({
-  options: {
-    url: null,
-    data: null,
-    silent: true,
-    debug: false,
-    resolution: s => {
-      if (s <= 3) return 4
-      if (s <= 5) return 6
-      if (s <= 6) return 8
-      if (s <= 9) return 12
-      return 14
-    },
-    parameters: {
-      date: new Date().toLocaleDateString(),
-      dateFrom: null,
-    },
-    cellColorKey: 'value',
-    cellColorMin: 0,
-    cellColorMax: null,
-    cellColorScale: (min, max) => d3.scaleLinear().domain([min, max]).range(['#fff', '#f00']),
-    cellColorNoData: '#eee',
-    cellColorNoKey: '#f00',
-    cellColorOpacity: .5,
-    cellSizeKey: null,
-    cellSizeMin: 0,
-    cellSizeMax: null,
-    cellSizeScale: (min, max) => {return value => (value - min) / (max - min)},
-    cellSizeNoData: 0,
-    cellSizeNoKey: 1,
-    cellContourColor: null,
-    cellContourWidth: 2,
-    colorProgressBar: '#ff5151',
-    colorDebug: '#1e90ff',
-    colorDebugEmphasized: '#f00',
-    attribution: 'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>',
-    bboxViewPad: 1.05,
-    bboxDataPad: 1.25,
-    renderer: 'webgl',
-    urlLibs: '/libs',
-  },
+if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
+  options: defaultOptions,
   initialize: function(options) {
     this._initialized = false
 
-    // init options
+    // init options I
     L.Util.setOptions(this, options)
-    if (this.options.debug) this.options.silent = false
-    if (!this.options.cellContourColor) this.options.cellContourColor = (this.options.debug) ? this.options.colorDebug : '#fff'
-    if (this.options.bboxViewPad < 1) {
-      this._progress.error('bboxViewPad must be larger than 1')
-      this.options.bboxViewPad = 1
-    }
-    if (this.options.bboxDataPad < 1) {
-      this._progress.error('bboxDataPad must be larger than 1')
-      this.options.bboxDataPad = 1
-    }
-    if (this.options.bboxDataPad < this.options.bboxViewPad) {
-      this._progress.error('bboxDataPad must be larger or equal than bboxViewPad')
-      this.options.bboxDataPad = this.options.bboxViewPad
-    }
-    this._cellColorScale = null
-    this._cellSizeScale = null
 
-    // init progress
-    this._progress = new Progress(this.options)
-
-    // init plugins
-    this._plugins = []
-    this._pluginCallbacks = {}
-    this._hoveredCells = []
-
-    // init data
-    this._data = new Data(this.options)
-
-    // choose renderer
-    if (this.options.renderer.toLowerCase() == 'svg') this._renderer = new RendererSVG(this.options, this._progress, this._data)
-    else {
-      if (typeof PIXI === 'undefined') this._progress.error('pixi.js needs to be loaded first')
-      if (typeof L.pixiOverlay === 'undefined') this._progress.error('Leaflet.PixiOverlay needs to be loaded first')
-      this._renderer = new RendererWebGL(this.options, this._progress, this._data)
-    }
-
-    // event for plugin
-    const eventForPlugin = cell => ({
-      lat: cell.lat,
-      lon: cell.lon,
-      cell: cell,
-      data: this._data.dataForId(cell.id),
-    })
-
-    // create web worker
-    let url = null
-    if (this.options.urlLibs.startsWith('http')) url = this.options.urlLibs
-    else if (this.options.urlLibs.startsWith('/')) url = `${document.location.protocol}//${document.location.hostname}${document.location.port ? `:${document.location.port}` : ''}${this.options.urlLibs}`
-    else {
-      url = document.location.href.split('/')
-      url = `${url.splice(0, url.length - 1).join('/')}/${this.options.urlLibs}`
-    }
-    const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts(\'./vptree.js/vptree.min.js\')', `importScripts('${url}/vptree.js/vptree.min.js')`)
-    this._webWorker = new Worker(URL.createObjectURL(new Blob([workerFunctionString])))
-    this._webWorker.addEventListener('message', e => {
-      const d = JSON.parse(e.data)
+    // event listener for web worker
+    const eventListener = d => {
       switch (d.task) {
-        case 'log':
-          this._progress.log(d.message)
-          break
-        case 'progress':
-          this._progress.progress(d.percent)
-          break
-        case 'debugStep':
-          this._progress.debugStep(d.title, d.percent)
-          break
-        case 'debugFinished':
-          this._progress.debugFinished()
-          break
-        case 'resultComputeCells':
-          this._data._cells = d.cells
-          this._produceGeoJSON()
-          break
         case 'resultPluginsHover':
           if (!this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
             for (const cell of this._hoveredCells) {
@@ -185,6 +99,36 @@ L.ISEA3HLayer = L.Layer.extend({
           this._execPluginCallback(d.uid, d.neighbors.map(cell => eventForPlugin(cell)))
           break
       }
+    }
+
+    // init the core
+    const core = initCore(this.options, eventListener, () => this._visualizeData(), true)
+    this.options = core.options
+    this._progress = core._progress
+    this._data = core._data
+    this._webWorker = core._webWorker
+    this._processDataInWebWorker = core._processDataInWebWorker
+    this._webWorkerPostMessage = core._webWorkerPostMessage
+
+    // init plugins
+    this._plugins = []
+    this._pluginCallbacks = {}
+    this._hoveredCells = []
+
+    // choose renderer
+    if (this.options.renderer.toLowerCase() == 'svg') this._renderer = new RendererSVG(this.options, this._progress, this._data)
+    else {
+      if (typeof PIXI === 'undefined') this._progress.error('pixi.js needs to be loaded first')
+      if (typeof L.pixiOverlay === 'undefined') this._progress.error('Leaflet.PixiOverlay needs to be loaded first')
+      this._renderer = new RendererWebGL(this.options, this._progress, this._data)
+    }
+
+    // event for plugin
+    const eventForPlugin = cell => ({
+      lat: cell.lat,
+      lon: cell.lon,
+      cell: cell,
+      data: this._data.dataForId(cell.id),
     })
   },
   onAdd: function(map) {
@@ -268,32 +212,16 @@ L.ISEA3HLayer = L.Layer.extend({
       }).catch(console.debug)
     } else this._processData()
   },
-  _processData: function() {
+  _processData() {
     // update scales
     this._data.updateScales()
-    // cache the data
-    this._progress.debugStep('cache the data', 6)
-    const data = this._data.cacheData()
-    // call web worker
-    this._progress.debugStep('send data to web worker', 8)
-    this._webWorkerPostMessage({
-      task: 'computeCells',
-      json: data,
-      url: document.location.href,
-      bbox: {
-        north: this._bboxData.getNorth(),
-        south: this._bboxData.getSouth(),
-        west: this._bboxData.getWest(),
-        east: this._bboxData.getEast(),
-      },
+    // process data in web worker
+    this._processDataInWebWorker({
+      north: this._bboxData.getNorth(),
+      south: this._bboxData.getSouth(),
+      west: this._bboxData.getWest(),
+      east: this._bboxData.getEast(),
     })
-  },
-  _produceGeoJSON: function() {
-    this._progress.debugStep('produce GeoJSON', 65)
-    // produce GeoJSON
-    this._data.produceGeoJSON()
-    // visualize data
-    this._visualizeData()
   },
   _reduceGeoJSON() {
     this._progress.debugStep('reduce GeoJSON for area', 70)
@@ -301,7 +229,7 @@ L.ISEA3HLayer = L.Layer.extend({
   },
   _visualizeData() {
     const t = this
-    const geoJSON = this._data._geoJSON
+    const geoJSON = this._data.getGeoJSON()
     // visualize
     if (geoJSON.features.length) {
       // visualize centroids
@@ -309,7 +237,7 @@ L.ISEA3HLayer = L.Layer.extend({
       t._centroids = []
       if (t.options.debug) {
         this._progress.debugStep('visualize centroids', 75)
-        for (let d of t._data._cells) {
+        for (let d of t._data.getCells()) {
           const circle = L.circle([d.lat, d.lon], {
             color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
             fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
@@ -352,7 +280,7 @@ L.ISEA3HLayer = L.Layer.extend({
     })
   },
   _onReset(e) {
-    if (this._data._geoJSON === undefined) return
+    if (this._data.getGeoJSON() === undefined) return
     // reset after zooming, panning, etc.
     if (!this._bboxData.contains(this._paddedBounds()) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
     else {
@@ -363,9 +291,6 @@ L.ISEA3HLayer = L.Layer.extend({
   _render() {
     this._renderer.render(this._reduceGeoJSON())
   },
-  _webWorkerPostMessage(d) {
-    this._webWorker.postMessage(JSON.stringify(d))
-  }
 })
 
-L.isea3hLayer = options => new L.ISEA3HLayer(options)
+if (leafletLoaded && d3Loaded) L.isea3hLayer = options => new L.ISEA3HLayer(options)

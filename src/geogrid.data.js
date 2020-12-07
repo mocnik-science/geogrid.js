@@ -26,6 +26,15 @@ module.exports.Data = class Data {
     while (len--) if (xs[len] > max) max = xs[len]
     return max
   }
+  getCells() {
+    return this._cells
+  }
+  setCells(cells) {
+    this._cells = cells
+  }
+  getGeoJSON() {
+    return this._geoJSON
+  }
   updateScales() {
     if (!this._options.data || !this._options.data.data) return
     const t = this
@@ -43,6 +52,26 @@ module.exports.Data = class Data {
     }
     this._cellColorScale = computeScale(this._options.cellColorScale, this._options.cellColorMin, this._options.cellColorMax, this._options.cellColorKey)
     this._cellSizeScale = computeScale(this._options.cellSizeScale, this._options.cellSizeMin, this._options.cellSizeMax, this._options.cellSizeKey)
+  }
+  getOverwriteColor() {
+    return this._overwriteColor
+  }
+  getOverwriteSize() {
+    return this._overwriteSize
+  }
+  overwriteColor(id, color) {
+    if (color !== null) this._overwriteColor[id] = color
+    else delete this._overwriteColor[cell.id]
+  }
+  overwriteSize(id, size) {
+    if (size !== null) this._overwriteSize[id] = size
+    else delete this._overwriteSize[cell.id]
+  }
+  resetOverwriteColor() {
+    this._overwriteColor = {}
+  }
+  resetOverwriteSize() {
+    this._overwriteSize = {}
   }
   cellColor(id, properties) {
     // return overwritten colour

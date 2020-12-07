@@ -31,7 +31,7 @@ module.exports.RendererSVG = class RendererSVG {
   update(geoJSON) {
     this._progress.debugStep('visualize - update (SVG))', 90)
     const t = this
-    const projectPoint = function (x, y) {
+    const projectPoint = (x, y) => {
       const point = t._map.latLngToLayerPoint(L.latLng(y, x))
       this.stream.point(point.x, point.y)
     }

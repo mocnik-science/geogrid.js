@@ -20,8 +20,9 @@ module.exports.RendererWebGL = class RendererWebGL {
     let prevOverwriteColor
     let prevOverwriteSize
     this._webgl = L.pixiOverlay(utils => {
+      const geoJSON = t._data.getGeoJSON()
       // if no geoJSON present, do nothing
-      if (t._data._geoJSON == null || t._data._geoJSON.features == null) return
+      if (geoJSON == null || geoJSON.features == null) return
       // log
       const renderer = utils.getRenderer()
       t._progress.debugStep(`visualize (${(renderer instanceof PIXI.CanvasRenderer) ? 'Canvas' : 'WebGL'})`, 90)
@@ -33,18 +34,18 @@ module.exports.RendererWebGL = class RendererWebGL {
       // colours
       const cellContourColor = pixiColor(t._options.cellContourColor)
       // check whether a referesh is need
-      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._data._overwriteColor) || prevOverwriteSize != JSON.stringify(this._data._overwriteSize)
+      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._data.getOverwriteColor()) || prevOverwriteSize != JSON.stringify(this._data.getOverwriteSize())
       prevZoom = zoom
-      prevOverwriteColor = JSON.stringify(this._data._overwriteColor)
-      prevOverwriteSize = JSON.stringify(this._data._overwriteSize)
+      prevOverwriteColor = JSON.stringify(this._data.getOverwriteColor())
+      prevOverwriteSize = JSON.stringify(this._data.getOverwriteSize())
       // if new geoJSON, cleanup and initialize
-      if (t._data._geoJSON._webgl_initialized == null || needsRefresh) {
-        t._data._geoJSON._webgl_initialized = true
+      if (geoJSON._webgl_initialized == null || needsRefresh) {
+        geoJSON._webgl_initialized = true
         pixiGraphics.clear()
         pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, 1)
       }
       // draw geoJSON features
-      for (const feature of t._data._geoJSON.features) {
+      for (const feature of geoJSON.features) {
         const notInitialized = (feature._webgl_coordinates == null)
         if (notInitialized) feature._webgl_coordinates = t._data.cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
         if (notInitialized || needsRefresh) {

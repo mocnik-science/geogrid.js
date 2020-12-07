@@ -2,19 +2,23 @@
 
 /****** PROGRESS ******/
 module.exports.Progress = class Progress {
-  constructor(options) {
+  constructor(options, visual) {
     this.options = options
-    
+    this.visual = visual
+
     // init progress bar
-    this._progressBar = document.createElement('div')
-    this._progressBar.style.backgroundColor = this.options.colorProgressBar
-    const backgroundColor = d3.color(this.options.colorProgressBar)
-    backgroundColor.opacity = .7
-    this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
-    document.getElementsByTagName('body')[0].appendChild(this._progressBar)
+    if (this.visual) {
+      this._progressBar = document.createElement('div')
+      this._progressBar.style.backgroundColor = this.options.colorProgressBar
+      const backgroundColor = d3.color(this.options.colorProgressBar)
+      backgroundColor.opacity = .7
+      this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
+      document.getElementsByTagName('body')[0].appendChild(this._progressBar)  
+    }
     this.progress(100)
   }
   remove() {
+    if (!this.visual) return
     clearTimeout(this._progresBarTimeoutReset)
     this._progressBar.remove()
   }
@@ -25,6 +29,7 @@ module.exports.Progress = class Progress {
     throw `[geogrid.js] ${message}`
   }
   progress(percent=100) {
+    if (!this.visual) return
     if (this._progresBarTimeoutReset !== undefined) {
       clearTimeout(this._progresBarTimeoutReset)
       this._progresBarTimeoutReset = undefined
