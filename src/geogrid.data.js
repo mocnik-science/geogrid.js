@@ -157,6 +157,7 @@ module.exports.Data = class Data {
   dataForId(id) {
     const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['id', 'lat', 'lon', 'isPentagon'].includes(k)) : []
     const d = this._dataById.get(id)
+    if (d === undefined) return {}
     const properties = {}
     for (const k of keysToCopy) properties[k] = d[k]
     return properties
