@@ -16,7 +16,6 @@
     "tests"
   ],
   "dependencies": {
-    "vptree.js": "git://github.com/fpirsch/vptree.js",
-    "Leaflet.PixiOverlay": "git://github.com/manubb/Leaflet.PixiOverlay#^1.8.1"
+    "vptree.js": "git://github.com/fpirsch/vptree.js"
   }
 }
