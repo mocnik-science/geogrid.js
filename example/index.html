@@ -23,7 +23,7 @@
     <script>
       $(document).ready(function() {
         var map = L.map('map').setView([49.4, 8.7], 10);
-        new L.StamenTileLayer('toner-lite').addTo(map);
+        L.stamenTileLayer('toner-lite').addTo(map);
         L.isea3hLayer({
           url: 'https://github.com/mocnik-science/geogrid.js/raw/master/example/grid',
           urlLibs: '../example/libs',
