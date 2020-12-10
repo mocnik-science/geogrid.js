@@ -4,10 +4,11 @@
   "description": "install npm",
   "main": "",
   "scripts": {
-    "prepare": "npm run build",
     "build": "webpack",
     "build-example": "mkdir -p example/libs && cp dist/* example/libs/ && cd example && bower install",
-    "clean": "rm -rf dist && rm -rf example/libs"
+    "clean": "rm -rf dist && rm -rf example/libs",
+    "prepare": "npm run build",
+    "prepack": "npm run build"
   },
   "author": "Franz-Benjamin Mocnik <mocnik@uni-heidelberg.de>",
   "license": "MIT",
