@@ -130,6 +130,7 @@ The following options are available:
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
+| `dataKeys` | `Array` | `...` | List of data keys to be copied for each cell.  By default, this list is determined automatically, which presumes that all keys are present for the first cell provided. |
 | `dataMap`| `Function` | `d => d` | Determines the data used for the corresponding cell, based on the list item provided in the json data.  This can, e.g., be used for more complex scenarios where timeline data is provided for each cell. |
 | `attribution` | `String` | `'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>'` | Attribution to be shown. |
 | `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
