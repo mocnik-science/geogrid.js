@@ -132,7 +132,7 @@ module.exports.Data = class Data {
     return json
   }
   produceGeoJSON() {
-    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['id', 'lat', 'lon', 'isPentagon'].includes(k)) : []
+    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['lat', 'lon', 'isPentagon'].includes(k)) : []
     const features = []
     for (let c of this._cells) {
       if (c.vertices !== undefined) {
@@ -155,7 +155,7 @@ module.exports.Data = class Data {
     }
   }
   dataForId(id) {
-    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['id', 'lat', 'lon', 'isPentagon'].includes(k)) : []
+    const keysToCopy = (this._cells.length > 0) ? Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['lat', 'lon', 'isPentagon'].includes(k)) : []
     const d = this._dataById.get(id)
     if (d === undefined) return {}
     const properties = {}
