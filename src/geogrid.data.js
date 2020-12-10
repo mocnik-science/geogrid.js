@@ -116,7 +116,7 @@ module.exports.Data = class Data {
     this._options.data.data = new Array(ds.length)
     for (let i = 0; i < ds.length; i++) {
       const d = ds[i]
-      this._dataById.set(d.id, d)
+      this._dataById.set(d.id, this._options.dataMap(d))
       if (d.lat !== undefined) {
         this._options.data.data[i] = {
           id: d.id,

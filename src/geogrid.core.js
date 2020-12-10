@@ -40,6 +40,7 @@ module.exports.defaultOptions = {
   colorProgressBar: '#ff5151',
   colorDebug: '#1e90ff',
   colorDebugEmphasized: '#f00',
+  dataMap: d => d,
   attribution: 'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>',
   bboxViewPad: 1.05,
   bboxDataPad: 1.25,
