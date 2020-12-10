@@ -26,13 +26,11 @@ The library `geogrid.js` requires some other libraries to be loaded:
 In addition, the [vptree.js library](http://fpirsch.github.io/vptree.js/) needs to be placed in the directory `/libs`.  In particular, the library should be made accessible as `/libs/vptree.js/vptree.min.js`.
 
 In order to use the `ISEA3HLayer`, a Leaflet map needs to be loaded first, for example, like follows:
-
 ```javascript
 var map = L.map('map').setView([49.4, 8.7], 10);
 ```
 
 In the following, we can add the `ISEA3HLayer`, which is provided by this library:
-
 ```javascript
 var isea3h = L.isea3hLayer({
   url: 'http://localhost:8080/api/test-measure/grid?resolution={resolution}&bbox={bbox}&date={date}&dateFrom={dateFrom}',
@@ -40,7 +38,6 @@ var isea3h = L.isea3hLayer({
 ```
 
 As an option, a URL needs to be provided under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be encoded, as is discussed in the description of the option `parameters`.  The data should be formatted as follows:
-
 ```json
 {
     "type":"grid",
@@ -61,7 +58,6 @@ The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive ID
 Data which is formatted in the above format is, for example, provided by the framework [Measures REST](https://github.com/giscience/measures-rest).
 
 The `ISEA3HLayer` can be used in combination with different base maps.  A good choice is [Toner lite by Stamen](http://maps.stamen.com/toner-lite).  The complete code of the example is as follows:
-
 ```javascript
 var map = L.map('map').setView([49.4, 8.7], 10);
 L.stamenTileLayer('toner-lite').addTo(map);
@@ -73,7 +69,6 @@ L.isea3hLayer({
 ## Example
 
 An example can be found in the subdirectory [example](https://github.com/mocnik-science/geogrid.js/tree/master/example).  To run the example, please generate first the file `geogrid.min.js` as described below, and then run:
-
 ```bash
 npm run build-example
 ```
@@ -83,7 +78,6 @@ Observe that the example presumes a local instance of [Measures REST](https://gi
 ## Options
 
 The `ISEA3HLayer` accepts several options, which allow to easily adapt the layer to the data source and the visualization needs.  Instead of depicting representing the value related to a grid cell by the colour, the value can also be encoded by the size of the grid cell:
-
 ```javascript
 L.isea3hLayer({
   url: '...',
@@ -93,7 +87,6 @@ L.isea3hLayer({
 ```
 
 Even two different values related to a grid cell can be represented, for example, the value with key `value1` encoded by the colour, and the value with key `value2`, by the size of the cell:
-
 ```javascript
 L.isea3hLayer({
   url: '...',
@@ -141,7 +134,6 @@ The following options are available:
 ## Plugins
 
 The functionality of the `ISEA3HLayer` can be extended by plugins.  Such plugins can easily be added to the layer:
-
 ```javascript
 var isea3h = L.isea3hLayer({...});
 isea3h.addPlugin(L.testPlugin());
@@ -156,7 +148,6 @@ The following plugins are available:
 ### General Structure of a Plugin
 
 Plugins extend the class `L.ISEA3HLayerPlugin`.  Several methods exist that can be overwritten in order to react to certain events.  A plugin can, for example, be implemented as follows:
-
 ```javascript
 class TestPlugin extends L.ISEA3HLayerPlugin {
   onHover(e) {
@@ -173,7 +164,6 @@ class TestPlugin extends L.ISEA3HLayerPlugin {
 ```
 
 In addition to a class, a factory method should be provided in order to simplify the instantiation of the plugin:
-
 ```javascript
 L.testPlugin = () => new TestPlugin()
 ```
@@ -191,7 +181,6 @@ Plugins to the `ISEA3HLayer` follow the [paradigm of reactive programming](https
 ### Methods
 
 Plugins can react to events by performing an action as soon as an event is triggered.  Such an action can change the state of the `ISEA3HLayer`, or other parts of the website.  As an example, a cell can be drawn in `blue` colour when it is hovered by the courser:
-
 ```javascript
 onHover(e) {
   this.setCellColor(e.cell, 'blue')
@@ -200,14 +189,12 @@ onHover(e) {
 ```
 
 The URL that is used to retrieve data from a server contains parameters.  Among these parameters are the resolution and the bounding box, but potentially also additional parameters.  These additional parameters can, for example, be set as follows:
-
 ```javascript
 this.setParameter('date', '2017-01-01')
 this.downloadData()
 ```
 
 Some of the functions except a callback as parameter because the result is computed asynchronously:
-
 ```javascript
 onHover(e) {
   this.neighbors(e.cell, cell => {
@@ -233,7 +220,6 @@ The following methods of the `L.ISEA3HLayerPlugin` are available:
 ## Compute GeoJSON only
 
 In some cases, one might not want to visualize grid data by the use of Leaflet but to only compute the corresponding GeoJSON.  The library thus provides a corresponding function to compute the GeoJSON in an efficient way.  For this, neither of the libraries needs to be loaded.  Only [vptree.js library](http://fpirsch.github.io/vptree.js/) is needed in the corresponding directory, per default `/libs`.  For data formatted as described at the top of this page, the GeoJSON can be computed as follows:
-
 ```javascript
 L.isea3hToGeoJSON({
   data: data,
@@ -245,10 +231,12 @@ Note that the result is communicated by a callback, and that many options have n
 
 ## Build geogrid.min.js
 
-The library can be translated from [ECMAScript 6](https://en.wikipedia.org/wiki/ECMAScript) to minified JavaScript, which results in a file `geogrid.min.js`.  In order to generate this minified file, you have to install [Node.js](https://nodejs.org/) first.  Thereafter, you have to execute the following commands:
-
+The library can be translated from [ECMAScript 6](https://en.wikipedia.org/wiki/ECMAScript) to minified JavaScript, which results in a file `geogrid.min.js`.  In order to generate this minified file, you have to install [Node.js](https://nodejs.org/) first.  Thereafter, you have to execute the following command:
 ```bash
 npm install
+```
+This command automatically also builds the library.  Whenever you want to re-build the thereafter, just run:
+```bash
 npm run build
 ```
 
