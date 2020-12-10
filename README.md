@@ -107,11 +107,11 @@ The following options are available:
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `url` | `String` | `null` | URL under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be used in the `url` by providing corresponding values in the option `parameters`.  The expected format of the returned data is described above. |
-| `data` | `Array` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
+| `data` | `Object` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
 | `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
 | `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
 | `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
-| `parameters` | `Array` | `{date: new Date().toLocaleDateString(), dateFrom: null}` | Additional parameters that can be used in the `url`. |
+| `parameters` | `Object` | `{date: new Date().toLocaleDateString(), dateFrom: null}` | Additional parameters that can be used in the `url`. |
 | `cellColorKey` | `String` | `value` | The colour to be used for a grid cell can be chosen in dependence of the property `cellColorKey` of the cell.  The colour is, accordingly, determined by computing the function `cellColorScale` with the property `cellColorKey` of the cell as argument.  If the option `cellColorKey` is `null`, the colour `cellColorNoKey` is used instead. |
 | `cellColorMin` | `Number` | `0` | Minimum value to be used in `cellColorScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
 | `cellColorMax` | `Number` | `null` | Maximum value to be used in `cellColorScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
