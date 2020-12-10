@@ -42,12 +42,12 @@ module.exports.Data = class Data {
       if (value == null) return null
       if (scale.length != 2) return scale
       let values
-      if (!min || !max) {
+      if (min != null || max != null) {
         values = Object.values(t._options.data.data).map(x => x[value]).filter(x => x !== null)
         if (values.length == 0) values = [0]
       }
-      const minComputed = (min) ? min : this._min(values)
-      const maxComputed = (max) ? max : this._max(values)
+      const minComputed = (min != null) ? min : this._min(values)
+      const maxComputed = (max != null) ? max : this._max(values)
       return scale(minComputed, maxComputed)
     }
     this._cellColorScale = computeScale(this._options.cellColorScale, this._options.cellColorMin, this._options.cellColorMax, this._options.cellColorKey)
