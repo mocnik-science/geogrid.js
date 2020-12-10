@@ -81,7 +81,7 @@ module.exports.Data = class Data {
     // compute value
     const value = properties[this._options.cellColorKey]
     // return if empty value
-    if (value == null) return this._options.cellColorNoData
+    if (value == null || value === undefined) return this._options.cellColorNoData
     // return if no scale
     if (this._cellColorScale == null) return this._options.cellColorNoKey
     // compute colour
@@ -97,7 +97,7 @@ module.exports.Data = class Data {
       // compute value
       const value = properties[this._options.cellSizeKey]
       // empty value
-      if (value == null) relativeSize = this._options.cellSizeNoData
+      if (value == null || value === undefined) relativeSize = this._options.cellSizeNoData
       // no scale
       else if (this._cellSizeScale == null) relativeSize = this._options.cellSizeNoKey
       // compute relative size
