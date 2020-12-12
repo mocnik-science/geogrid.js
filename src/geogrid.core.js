@@ -41,7 +41,7 @@ module.exports.defaultOptions = {
   colorDebug: '#1e90ff',
   colorDebugEmphasized: '#f00',
   dataKeys: null,
-  dataMap: d => d,
+  dataMap: null,
   attribution: 'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>',
   bboxViewPad: 1.05,
   bboxDataPad: 1.25,

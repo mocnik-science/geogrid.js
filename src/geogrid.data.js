@@ -25,7 +25,7 @@ module.exports.Data = class Data {
     let min = Infinity
     for (const v of this._dataById.values()) {
       if (v[key] === null) continue
-      const w = this._options.dataMap(v)[key]
+      const w = this._dataMap(v)[key]
       if (w < min) min = w
     }
     return min
@@ -34,7 +34,7 @@ module.exports.Data = class Data {
     let max = -Infinity
     for (const v of this._dataById.values()) {
       if (v[key] === null) continue
-      const w = this._options.dataMap(v)[key]
+      const w = this._dataMap(v)[key]
       if (w > max) max = w
     }
     return max
@@ -133,7 +133,7 @@ module.exports.Data = class Data {
   dataKeys() {
     if (this._options.dataKeys !== null) return this._options.dataKeys
     if (this._cells.length == 0) return []
-    return Object.keys(this._options.dataMap(this._dataById.get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
+    return Object.keys(this._dataMap(this._dataById.get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
   }
   produceGeoJSON() {
     // update scales
@@ -142,32 +142,36 @@ module.exports.Data = class Data {
     const keysToCopy = this.dataKeys()
     const features = []
     for (let c of this._cells) {
-      if (c.vertices !== undefined) {
-        const properties = {}
-        const d = this._options.dataMap(this._dataById.get(c.id))
-        for (const k of keysToCopy) properties[k] = d[k]
-        features.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [c.vertices],
-          },
-          properties: properties,
-        })
-      }
+      if (c.vertices !== undefined) features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [c.vertices],
+        },
+        properties: this.dataForId(c.id),
+      })
     }
     this._geoJSON = {
       type: 'FeatureCollection',
       features: features,
     }
   }
+  _dataMap(d) {
+    if (this._options.dataMap !== null) return this._options.dataMap(d)
+    return d
+  }
   dataForId(id) {
     const d = this._dataById.get(id)
     if (d === undefined) return {}
-    const d2 = this._options.dataMap(d)
+    const d2 = this._dataMap(d)
     const properties = {}
     for (const k of this.dataKeys()) properties[k] = d2[k]
     return properties
+  }
+  dataForIdNotMapped(id) {
+    const d = this._dataById.get(id)
+    if (d === undefined) return {}
+    return d
   }
   reduceGeoJSON(b) {
     if (!this._geoJSON) return

@@ -125,11 +125,13 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
 
     // event for plugin
+    const t = this
     const eventForPlugin = cell => ({
       lat: cell.lat,
       lon: cell.lon,
       cell: cell,
       data: this._data.dataForId(cell.id),
+      ...(this.options.dataMap !== null ? {dataNotMapped: this._data.dataForIdNotMapped(cell.id)} : {}),
     })
   },
   onAdd: function(map) {
