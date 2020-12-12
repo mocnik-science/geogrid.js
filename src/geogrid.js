@@ -112,8 +112,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._webWorkerPostMessage = core._webWorkerPostMessage
 
     // init plugins
-    this._plugins = []
-    this._pluginCallbacks = {}
+    if (this._plugins === undefined) this._plugins = []
+    if (this._pluginCallbacks === undefined) this._pluginCallbacks = {}
     this._hoveredCells = []
 
     // choose renderer
@@ -164,6 +164,71 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
 
     this._map = null
   },
+  update: function(options) {
+    let reinitialize = false
+    let updateData = false
+    let processData = false
+    // messages
+    const notYetImplemented = o => {
+      console.log(`[WARNING] update of "${o}" not yet implemented; will re-initialize`)
+      reinitialize = true
+    }
+    // check options
+    if (options.url != undefined) updateData = true
+    if (options.data != undefined) reinitialize = true
+    if (options.silent != undefined) notYetImplemented('silent')
+    if (options.debug != undefined) notYetImplemented('debug')
+    if (options.resolution != undefined) notYetImplemented('resolution')
+    if (options.parameters != undefined) updateData = true
+    if (options.cellColorKey != undefined) processData = true
+    if (options.cellColorMin != undefined) processData = true
+    if (options.cellColorMax != undefined) processData = true
+    if (options.cellColorScale != undefined) processData = true
+    if (options.cellColorNoData != undefined) processData = true
+    if (options.cellColorNoKey != undefined) processData = true
+    if (options.cellColorOpacity != undefined) processData = true
+    if (options.cellSizeKey != undefined) processData = true
+    if (options.cellSizeMin != undefined) processData = true
+    if (options.cellSizeMax != undefined) processData = true
+    if (options.cellSizeScale != undefined) processData = true
+    if (options.cellSizeNoData != undefined) processData = true
+    if (options.cellSizeNoKey != undefined) processData = true
+    if (options.cellContourColor != undefined) processData = true
+    if (options.cellContourWidth != undefined) processData = true
+    if (options.colorProgressBar != undefined) notYetImplemented('colorProgressBar')
+    if (options.colorDebug != undefined) notYetImplemented('colorDebug')
+    if (options.colorDebugEmphasized != undefined) notYetImplemented('colorDebugEmphasized')
+    if (options.dataKeys != undefined) notYetImplemented('dataKeys')
+    if (options.dataMap != undefined) processData = true
+    if (options.attribution != undefined) notYetImplemented('attribution')
+    if (options.bboxViewPad != undefined) notYetImplemented('bboxViewPad')
+    if (options.bboxDataPad != undefined) notYetImplemented('bboxDataPad')
+    if (options.renderer != undefined) notYetImplemented('renderer')
+    if (options.urlLibs != undefined) notYetImplemented('urlLibs')
+    // re-initialize
+    if (reinitialize) {
+      const map = this._map
+      this.onRemove(this._map)
+      this.initialize({
+        ...this.options,
+        ...options,
+      })
+      this.onAdd(map)
+      return
+    }
+    // copy options
+    for (const k in options) this.options[k] = options[k]
+    // update data
+    if (updateData) {
+      this._updateData()
+      return
+    }
+    // process data
+    if (processData) {
+      this._processData()
+      return
+    }
+  },
   addPlugin: function(plugin) {
     plugin.onAdd(this)
     this._plugins.push(plugin)
@@ -198,6 +263,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   },
   _updateData: function() {
     const t = this
+    // proceed only if data is available
+    if (this.options.data === null) return
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 2.5)
@@ -215,8 +282,6 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       }).catch(console.debug)
     } else this._processData()
   },
-    // update scales
-    this._data.updateScales()
   _processData: function() {
     // process data in web worker
     this._processDataInWebWorker({
@@ -224,6 +289,9 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       south: this._bboxData.getSouth(),
       west: this._bboxData.getWest(),
       east: this._bboxData.getEast(),
+    }, () => {
+      // update scales
+      this._data.updateScales()
     })
   },
   _reduceGeoJSON: function() {
@@ -285,7 +353,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   _onReset: function(e) {
     if (this._data.getGeoJSON() === undefined) return
     // reset after zooming, panning, etc.
-    if (!this._bboxData.contains(this._paddedBounds()) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
+    if ((this._paddedBounds && !this._bboxData.contains(this._paddedBounds())) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
     else {
       const geoJSONreduced = this._reduceGeoJSON()
       if (geoJSONreduced && geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)

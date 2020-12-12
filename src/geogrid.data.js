@@ -12,20 +12,6 @@ module.exports.Data = class Data {
     this._overwriteColor = {}
     this._overwriteSize = {}
   }
-  // replaces Math.min(...xs) but also works for very large array
-  _min(xs) {
-    let len = xs.length
-    let min = Infinity
-    while (len--) if (xs[len] < min) min = xs[len]
-    return min
-  }
-  // replaces Math.max(...xs) but also works for very large array
-  _max(xs) {
-    let len = xs.length
-    let max = -Infinity
-    while (len--) if (xs[len] > max) max = xs[len]
-    return max
-  }
   getCells() {
     return this._cells
   }
@@ -35,19 +21,32 @@ module.exports.Data = class Data {
   getGeoJSON() {
     return this._geoJSON
   }
+  _minDataValue(key) {
+    let min = Infinity
+    for (const v of this._dataById.values()) {
+      if (v[key] === null) continue
+      const w = this._options.dataMap(v)[key]
+      if (w < min) min = w
+    }
+    return min
+  }
+  _maxDataValue(key) {
+    let max = -Infinity
+    for (const v of this._dataById.values()) {
+      if (v[key] === null) continue
+      const w = this._options.dataMap(v)[key]
+      if (w > max) max = w
+    }
+    return max
+  }
   updateScales() {
-    if (!this._options.data || !this._options.data.data) return
+    if (!this._dataById) return
     const t = this
-    const computeScale = (scale, min, max, value) => {
-      if (value == null) return null
+    const computeScale = (scale, min, max, key) => {
+      if (key === null) return null
       if (scale.length != 2) return scale
-      let values
-      if (min != null || max != null) {
-        values = Object.values(t._options.data.data).map(x => x[value]).filter(x => x !== null)
-        if (values.length == 0) values = [0]
-      }
-      const minComputed = (min != null) ? min : this._min(values)
-      const maxComputed = (max != null) ? max : this._max(values)
+      const minComputed = (min != null) ? min : this._minDataValue(key)
+      const maxComputed = (max != null) ? max : this._maxDataValue(key)
       return scale(minComputed, maxComputed)
     }
     this._cellColorScale = computeScale(this._options.cellColorScale, this._options.cellColorMin, this._options.cellColorMax, this._options.cellColorKey)
@@ -77,13 +76,13 @@ module.exports.Data = class Data {
     // return overwritten colour
     if (id in this._overwriteColor) return this._overwriteColor[id]
     // no key
-    if (this._options.cellColorKey == null) return this._options.cellColorNoKey
+    if (this._options.cellColorKey === null) return this._options.cellColorNoKey
     // compute value
     const value = properties[this._options.cellColorKey]
     // return if empty value
-    if (value == null || value === undefined) return this._options.cellColorNoData
+    if (value === null || value === undefined) return this._options.cellColorNoData
     // return if no scale
-    if (this._cellColorScale == null) return this._options.cellColorNoKey
+    if (this._cellColorScale === null) return this._options.cellColorNoKey
     // compute colour
     return this._cellColorScale(value)
   }
@@ -92,14 +91,14 @@ module.exports.Data = class Data {
     // choose overwritten relative size
     if (id in this._overwriteSize) relativeSize = this._overwriteSize[id]
     // no key
-    else if (this._options.cellSizeKey == null) relativeSize = this._options.cellSizeNoKey
+    else if (this._options.cellSizeKey === null) relativeSize = this._options.cellSizeNoKey
     else {
       // compute value
       const value = properties[this._options.cellSizeKey]
       // empty value
-      if (value == null || value === undefined) relativeSize = this._options.cellSizeNoData
+      if (value === null || value === undefined) relativeSize = this._options.cellSizeNoData
       // no scale
-      else if (this._cellSizeScale == null) relativeSize = this._options.cellSizeNoKey
+      else if (this._cellSizeScale === null) relativeSize = this._options.cellSizeNoKey
       // compute relative size
       else relativeSize = this._cellSizeScale(value)
     }
@@ -110,13 +109,13 @@ module.exports.Data = class Data {
     return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
   }
   cacheData() {
-    if (this._options.data === null) return null
+    if (this._options.data === null || this._options.data === true) return null
     this._dataById = new Map()
     const ds = this._options.data.data
     this._options.data.data = new Array(ds.length)
     for (let i = 0; i < ds.length; i++) {
       const d = ds[i]
-      this._dataById.set(d.id, this._options.dataMap(d))
+      this._dataById.set(d.id, d)
       if (d.lat !== undefined) {
         this._options.data.data[i] = {
           id: d.id,
@@ -128,13 +127,13 @@ module.exports.Data = class Data {
       this._options.data.data[i] = d.id
     }
     const json = this._options.data
-    this._options.data = null
+    this._options.data = true
     return json
   }
   dataKeys() {
     if (this._options.dataKeys !== null) return this._options.dataKeys
     if (this._cells.length == 0) return []
-    return Object.keys(this._dataById.get(this._cells[0].id)).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
+    return Object.keys(this._options.dataMap(this._dataById.get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
   }
   produceGeoJSON() {
     const keysToCopy = this.dataKeys()
@@ -142,7 +141,7 @@ module.exports.Data = class Data {
     for (let c of this._cells) {
       if (c.vertices !== undefined) {
         const properties = {}
-        const d = this._dataById.get(c.id)
+        const d = this._options.dataMap(this._dataById.get(c.id))
         for (const k of keysToCopy) properties[k] = d[k]
         features.push({
           type: 'Feature',
@@ -162,8 +161,9 @@ module.exports.Data = class Data {
   dataForId(id) {
     const d = this._dataById.get(id)
     if (d === undefined) return {}
+    const d2 = this._options.dataMap(d)
     const properties = {}
-    for (const k of this.dataKeys()) properties[k] = d[k]
+    for (const k of this.dataKeys()) properties[k] = d2[k]
     return properties
   }
   reduceGeoJSON(b) {
