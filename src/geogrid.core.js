@@ -56,7 +56,7 @@ const createWebWorker = (options) => {
     url = document.location.href.split('/')
     url = `${url.splice(0, url.length - 1).join('/')}/${options.urlLibs}`
   }
-  const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts(\'./vptree.js/vptree.min.js\')', `importScripts('${url}/vptree.js/vptree.min.js')`)
+  const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts("./vptree.js/vptree.min.js")', `importScripts('${url}/vptree.js/vptree.min.js')`)
   return new Worker(URL.createObjectURL(new Blob([workerFunctionString])))
 }
 

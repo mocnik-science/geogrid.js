@@ -215,9 +215,9 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       }).catch(console.debug)
     } else this._processData()
   },
-  _processData() {
     // update scales
     this._data.updateScales()
+  _processData: function() {
     // process data in web worker
     this._processDataInWebWorker({
       north: this._bboxData.getNorth(),
@@ -226,11 +226,11 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       east: this._bboxData.getEast(),
     })
   },
-  _reduceGeoJSON() {
+  _reduceGeoJSON: function() {
     this._progress.debugStep('reduce GeoJSON for area', 70)
     return this._data.reduceGeoJSON(this._paddedBounds())
   },
-  _visualizeData() {
+  _visualizeData: function() {
     const t = this
     const geoJSON = this._data.getGeoJSON()
     // visualize
@@ -256,7 +256,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     // layer has been initialized
     this._initialized = true
   },
-  _onMouseMove(e) {
+  _onMouseMove: function(e) {
     if (this._pluginsOnHover && this._initialized) this._webWorkerPostMessage({
       task: 'findCell',
       taskResult: 'resultPluginsHover',
@@ -264,7 +264,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       lon: e.latlng.lng,
     })
   },
-  _onMouseOut(e) {
+  _onMouseOut: function(e) {
     if (this._hoveredCells === undefined) return
     for (const cell of this._hoveredCells) {
       const ePlugin = {
@@ -274,7 +274,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
     this._hoveredCells = []
   },
-  _onClick(e) {
+  _onClick: function(e) {
     if (this._pluginsOnHover && this._initialized) this._webWorkerPostMessage({
       task: 'findCell',
       taskResult: 'resultPluginsClick',
@@ -282,7 +282,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       lon: e.latlng.lng,
     })
   },
-  _onReset(e) {
+  _onReset: function(e) {
     if (this._data.getGeoJSON() === undefined) return
     // reset after zooming, panning, etc.
     if (!this._bboxData.contains(this._paddedBounds()) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
@@ -291,7 +291,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       if (geoJSONreduced && geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)
     }
   },
-  _render() {
+  _render: function() {
     this._renderer.render(this._reduceGeoJSON())
   },
 })

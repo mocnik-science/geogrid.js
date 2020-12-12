@@ -8,14 +8,18 @@ module.exports = {
     filename: 'geogrid.min.js',
   },
   module: {
-    loaders: [{
+    rules: [{
       test: /\.js$/,
-      loader: 'babel-loader',
-      query: {
-        presets: ['env'],
+      exclude: [/node_modules/, /src\/geogrid.worker.js/],
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env'],
+        },
       },
     }, {
       test: /\.scss$/,
+      exclude: /node_modules/,
       use: [{
         loader: 'style-loader',
       }, {
