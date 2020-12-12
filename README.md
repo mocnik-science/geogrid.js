@@ -260,7 +260,7 @@ This software is written and maintained by Franz-Benjamin Mocnik, <mail@mocnik-s
 
 In 2017–2019, this software has been supported by the DFG project *A framework for measuring the fitness for purpose of OpenStreetMap data based on intrinsic quality indicators* (FA 1189/3-1).
 
-All commits after 9/2019 (c) by Franz-Benjamin Mocnik, 2019.
+All commits after 9/2019 (c) by Franz-Benjamin Mocnik, 2019–2020.
 All commits before 8/2019 (c) by Heidelberg University, 2017–2019.
 
 ## License
