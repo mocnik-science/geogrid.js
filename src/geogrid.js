@@ -355,7 +355,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     })
   },
   _onReset: function(e) {
-    if (this._data.getGeoJSON() === undefined) return
+    if (this._data.getGeoJSON() === null || this._data.getGeoJSON() === undefined) return
     // reset after zooming, panning, etc.
     if ((this._paddedBounds && !this._bboxData.contains(this._paddedBounds())) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
     else {
