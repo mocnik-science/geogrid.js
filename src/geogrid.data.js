@@ -112,23 +112,24 @@ module.exports.Data = class Data {
     if (this._options.data === null || this._options.data === true) return null
     this._dataById = new Map()
     const ds = this._options.data.data
-    this._options.data.data = new Array(ds.length)
+    const data = {
+      data: new Array(ds.length)
+    }
     for (let i = 0; i < ds.length; i++) {
       const d = ds[i]
       this._dataById.set(d.id, d)
       if (d.lat !== undefined) {
-        this._options.data.data[i] = {
+        data.data[i] = {
           id: d.id,
           lat: d.lat,
           lon: d.lon,
         }
-        if (d.isPentagon !== undefined) this._options.data.data[i].isPentagon = d.isPentagon
-      }
-      this._options.data.data[i] = d.id
+        if (d.isPentagon !== undefined) data.data[i].isPentagon = d.isPentagon
+      } else data.data[i] = d.id
     }
-    const json = this._options.data
+    for (const k of Object.keys(this._options.data)) if (k != 'data') data[k] = this._options.data[k]
     this._options.data = true
-    return json
+    return data
   }
   dataKeys() {
     if (this._options.dataKeys !== null) return this._options.dataKeys
