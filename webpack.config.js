@@ -10,7 +10,7 @@ module.exports = {
   module: {
     rules: [{
       test: /\.js$/,
-      exclude: [/node_modules/, /src\/geogrid.worker.js/],
+      exclude: [/src\/geogrid.worker.js/],
       use: {
         loader: 'babel-loader',
         options: {
@@ -19,7 +19,6 @@ module.exports = {
       },
     }, {
       test: /\.scss$/,
-      exclude: /node_modules/,
       use: [{
         loader: 'style-loader',
       }, {
