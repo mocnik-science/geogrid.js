@@ -95,6 +95,18 @@ L.isea3hLayer({
 })
 ```
 
+Most options can even be updated after the `ISEA3HLayer` has been initialized, which makes possible to interactively adapt the display and depict different aspects of the data without the need to reload them:
+```javascript
+isea3h = L.isea3hLayer({
+  url: '...',
+  cellColorKey: 'value1',
+})
+...
+isea3h.update({
+  cellColorKey: 'value2',
+})
+```
+
 The following options are available:
 
 | Option | Type | Default | Description |
