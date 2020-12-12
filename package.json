@@ -1,8 +1,7 @@
 {
   "name": "geogrid.js",
   "version": "0.0.1",
-  "description": "install npm",
-  "main": "",
+  "description": "Leaflet plugin for Visualizing Discrete Global Grid Systems",
   "scripts": {
     "build": "webpack",
     "build-example": "mkdir -p example/libs && cp dist/* example/libs/ && cd example && bower install",
