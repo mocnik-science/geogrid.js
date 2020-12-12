@@ -19,14 +19,14 @@ module.exports.isea3hWorker = () => {
     return r
   }
   // replaces Math.min(...xs) but also works for very large array
-  const _min = (xs) => {
+  const _min = xs => {
     let len = xs.length
     let min = Infinity
     while (len--) if (xs[len] < min) min = xs[len]
     return min
   }
   // replaces Math.max(...xs) but also works for very large array
-  const _max = (xs) => {
+  const _max = xs => {
     let len = xs.length
     let max = -Infinity
     while (len--) if (xs[len] > max) max = xs[len]
