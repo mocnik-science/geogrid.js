@@ -136,6 +136,9 @@ module.exports.Data = class Data {
     return Object.keys(this._options.dataMap(this._dataById.get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
   }
   produceGeoJSON() {
+    // update scales
+    this.updateScales()
+    // produce GeoJSON
     const keysToCopy = this.dataKeys()
     const features = []
     for (let c of this._cells) {

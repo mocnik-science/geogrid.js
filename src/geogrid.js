@@ -168,6 +168,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     let reinitialize = false
     let updateData = false
     let processData = false
+    let produceGeoJSON = false
     // messages
     const notYetImplemented = o => {
       console.log(`[WARNING] update of "${o}" not yet implemented; will re-initialize`)
@@ -180,26 +181,26 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (options.debug != undefined) notYetImplemented('debug')
     if (options.resolution != undefined) notYetImplemented('resolution')
     if (options.parameters != undefined) updateData = true
-    if (options.cellColorKey != undefined) processData = true
-    if (options.cellColorMin != undefined) processData = true
-    if (options.cellColorMax != undefined) processData = true
-    if (options.cellColorScale != undefined) processData = true
-    if (options.cellColorNoData != undefined) processData = true
-    if (options.cellColorNoKey != undefined) processData = true
-    if (options.cellColorOpacity != undefined) processData = true
-    if (options.cellSizeKey != undefined) processData = true
-    if (options.cellSizeMin != undefined) processData = true
-    if (options.cellSizeMax != undefined) processData = true
-    if (options.cellSizeScale != undefined) processData = true
-    if (options.cellSizeNoData != undefined) processData = true
-    if (options.cellSizeNoKey != undefined) processData = true
-    if (options.cellContourColor != undefined) processData = true
-    if (options.cellContourWidth != undefined) processData = true
+    if (options.cellColorKey != undefined) produceGeoJSON = true
+    if (options.cellColorMin != undefined) produceGeoJSON = true
+    if (options.cellColorMax != undefined) produceGeoJSON = true
+    if (options.cellColorScale != undefined) produceGeoJSON = true
+    if (options.cellColorNoData != undefined) produceGeoJSON = true
+    if (options.cellColorNoKey != undefined) produceGeoJSON = true
+    if (options.cellColorOpacity != undefined) produceGeoJSON = true
+    if (options.cellSizeKey != undefined) produceGeoJSON = true
+    if (options.cellSizeMin != undefined) produceGeoJSON = true
+    if (options.cellSizeMax != undefined) produceGeoJSON = true
+    if (options.cellSizeScale != undefined) produceGeoJSON = true
+    if (options.cellSizeNoData != undefined) produceGeoJSON = true
+    if (options.cellSizeNoKey != undefined) produceGeoJSON = true
+    if (options.cellContourColor != undefined) produceGeoJSON = true
+    if (options.cellContourWidth != undefined) produceGeoJSON = true
     if (options.colorProgressBar != undefined) notYetImplemented('colorProgressBar')
     if (options.colorDebug != undefined) notYetImplemented('colorDebug')
     if (options.colorDebugEmphasized != undefined) notYetImplemented('colorDebugEmphasized')
     if (options.dataKeys != undefined) notYetImplemented('dataKeys')
-    if (options.dataMap != undefined) processData = true
+    if (options.dataMap != undefined) produceGeoJSON = true
     if (options.attribution != undefined) notYetImplemented('attribution')
     if (options.bboxViewPad != undefined) notYetImplemented('bboxViewPad')
     if (options.bboxDataPad != undefined) notYetImplemented('bboxDataPad')
@@ -226,6 +227,12 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     // process data
     if (processData) {
       this._processData()
+      return
+    }
+    // produce GeoJSON
+    if (produceGeoJSON) {
+      this._data.produceGeoJSON()
+      this._visualizeData()
       return
     }
   },
@@ -289,9 +296,6 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       south: this._bboxData.getSouth(),
       west: this._bboxData.getWest(),
       east: this._bboxData.getEast(),
-    }, () => {
-      // update scales
-      this._data.updateScales()
     })
   },
   _reduceGeoJSON: function() {

@@ -118,14 +118,12 @@ module.exports.initCore = (options, eventListener, callback, visual) => {
     _webWorker.postMessage(JSON.stringify(d))
   }
 
-  const _processDataInWebWorker = (bbox=undefined, initData=() => {}) => {
+  const _processDataInWebWorker = (bbox=undefined) => {
     // proceed only if data is available
     if (options.data === null) return
     // cache the data
     _progress.debugStep('cache the data', 6)
     const data = _data.cacheData()
-    // execute operations to init the data
-    initData()
     // call web worker
     _progress.debugStep('send data to web worker', 8)
     _webWorkerPostMessage({
