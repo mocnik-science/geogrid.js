@@ -328,7 +328,10 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       this._render()
     }
     // layer has been initialized
-    this._initialized = true
+    if (!this._initialized) {
+      this.fire('loadComplete')
+      this._initialized = true
+    }
   },
   _onMouseMove: function(e) {
     if (this._pluginsOnHover && this._initialized) this._webWorkerPostMessage({
