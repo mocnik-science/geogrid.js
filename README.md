@@ -209,8 +209,8 @@ this.downloadData()
 Some of the functions except a callback as parameter because the result is computed asynchronously:
 ```javascript
 onHover(e) {
-  this.neighbors(e.cell, cell => {
-    console.debug(cell)
+  this.neighbors(e.cell, cells => {
+    console.debug(cells)
   })
 }
 ```
