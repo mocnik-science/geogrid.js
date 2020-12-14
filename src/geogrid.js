@@ -24,10 +24,8 @@ const initCore = require('./geogrid.core.js').initCore
 L.isea3hToGeoJSON = (options, callback) => {
   // set options
   options = Object.assign({}, () => {}, defaultOptions, options)
-
   // init core
   const {_processDataInWebWorker} = initCore(options, d => {}, callback, false)
-
   // process
   _processDataInWebWorker()
 }
@@ -66,6 +64,20 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
   resetCellSize() {
     this._layer._data.resetOverwriteSize()
   }
+  setCellContourColor(cell, value) {
+    if (value) this._layer._data.overwriteContourColor(cell.id, value)
+    else this._layer._data.overwriteContourColor(cell.id, null)
+  }
+  resetCellContourColor() {
+    this._layer._data.resetOverwriteContourColor()
+  }
+  setCellContourWidth(cell, value) {
+    if (value) this._layer._data.overwriteContourWidth(cell.id, value)
+    else this._layer._data.overwriteContourWidth(cell.id, null)
+  }
+  resetCellContourWidth() {
+    this._layer._data.resetOverwriteContourWidth()
+  }
 }
 
 /****** LAYER ******/
@@ -93,7 +105,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
           }
           break
         case 'resultPluginsClick':
-          const ePlugin = eventForPlugin(d)
+          const ePlugin = eventForPlugin(d.cell)
           for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
           break
         case 'resultFindNeighbors':

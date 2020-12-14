@@ -225,9 +225,13 @@ The following methods of the `L.ISEA3HLayerPlugin` are available:
 | `getParameter(parameter)` | Gets the value of a parameter.  Such parameters can be used in the URL when requesting data from the server. |
 | `setParameter(parameter, value)` | Sets a parameter. Such parameters can be used in the URL when requesting data from the server.  The method `downloadData` needs to be called to make the change effective. |
 | `setCellColor(cell, color)` | Sets the colour of the grid cell `cell` to `color`.  If `color` is `null`, the colour of the grid cell is computed by using the options `cellColor*`.  The method `render` needs to be called to make the change effective. |
-| `resetCellColor()` | Computes the colour of all grid cells by using the options `cellColor*`.  The method `render` needs to be called to make the change effective. |
+| `resetCellColor()` | Resets the colours set by `setCellColor`.  The colour of all grid cells are thus computed by using the options `cellColor*`.  The method `render` needs to be called to make the change effective. |
 | `setCellSize(cell, size)` | Sets the relative size of the grid cell `cell` to `size`.  If `size` is `null`, the relative size of the grid cell is computed by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
-| `resetCellSize()` | Computes the relative size of all grid cells by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
+| `resetCellSize()` | Resets the sizes set by `setCellSize`.  The relative size of all grid cells are thus computed by using the options `cellSize*`.  The method `render` needs to be called to make the change effective. |
+| `setCellContourColor(cell, color)` | Sets the contour colour of the grid cell `cell` to `color`.  If `color` is `null`, the contour colour of the grid cell equals the option `cellContourColor`.  The method `render` needs to be called to make the change effective. |
+| `resetCellContourColor()` | Resets the contour colors set by `setCellContourColor`.  The contour color of all grid cells thus equals the option `cellContourColor`.  The method `render` needs to be called to make the change effective. |
+| `setCellContourWidth(cell, width)` | Sets the contour width of the grid cell `cell` to `width`.  If `width` is `null`, the contour size of the grid cell equals the option `cellContourWidth`.  The method `render` needs to be called to make the change effective. |
+| `resetCellContourWidth()` | Resets the contour widths set by `setCellContourWidth`.  The contour width of all grid cells thus equals the option `cellContourWidth`.  The method `render` needs to be called to make the change effective. |
 
 ## Compute GeoJSON only
 

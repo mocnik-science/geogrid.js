@@ -23,8 +23,8 @@ module.exports.RendererSVG = class RendererSVG {
       .data(geoJSON.features)
       .enter().append('path')
         .attr('fill', feature => t._data.cellColor(feature.properties.id, feature.properties))
-        .attr('stroke', t._options.cellContourColor)
-        .attr('stroke-width', t._options.cellContourWidth)
+        .attr('stroke', feature => t._data.cellContourColor(feature.properties.id))
+        .attr('stroke-width', feature => t._data.cellContourWidth(feature.properties.id))
         .attr('opacity', this._options.cellColorOpacity)
     this.update(geoJSON)
   }

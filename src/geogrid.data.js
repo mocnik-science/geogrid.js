@@ -11,6 +11,8 @@ module.exports.Data = class Data {
     // init plugins
     this._overwriteColor = {}
     this._overwriteSize = {}
+    this._overwriteContourColor = {}
+    this._overwriteContourWidth = {}
   }
   getCells() {
     return this._cells
@@ -58,6 +60,12 @@ module.exports.Data = class Data {
   getOverwriteSize() {
     return this._overwriteSize
   }
+  getOverwriteContourColor() {
+    return this._overwriteContourColor
+  }
+  getOverwriteContourWidth() {
+    return this._overwriteContourWidth
+  }
   overwriteColor(id, color) {
     if (color !== null) this._overwriteColor[id] = color
     else delete this._overwriteColor[cell.id]
@@ -66,11 +74,25 @@ module.exports.Data = class Data {
     if (size !== null) this._overwriteSize[id] = size
     else delete this._overwriteSize[cell.id]
   }
+  overwriteContourColor(id, color) {
+    if (color !== null) this._overwriteContourColor[id] = color
+    else delete this._overwriteContourColor[cell.id]
+  }
+  overwriteContourWidth(id, width) {
+    if (width !== null) this._overwriteContourWidth[id] = width
+    else delete this._overwriteContourWidth[cell.id]
+  }
   resetOverwriteColor() {
     this._overwriteColor = {}
   }
   resetOverwriteSize() {
     this._overwriteSize = {}
+  }
+  resetOverwriteContourColor() {
+    this._overwriteContourColor = {}
+  }
+  resetOverwriteContourWidth() {
+    this._overwriteContourWidth = {}
   }
   cellColor(id, properties) {
     // return overwritten colour
@@ -108,6 +130,18 @@ module.exports.Data = class Data {
     const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
     return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
   }
+  cellContourColor(id, returnNullOnDefault=false) {
+    // return overwritten contour colour
+    if (id in this._overwriteContourColor) return this._overwriteContourColor[id]
+    // return default value
+    return returnNullOnDefault ? null : this._options.cellContourColor
+  }
+  cellContourWidth(id, returnNullOnDefault=false) {
+    // return overwritten contour width
+    if (id in this._overwriteContourWidth) return this._overwriteContourWidth[id]
+    // return default value
+    return returnNullOnDefault ? null : this._options.cellContourWidth
+  }
   cacheData() {
     if (this._options.data === null || this._options.data === true) return null
     this._dataById = new Map()
@@ -140,7 +174,6 @@ module.exports.Data = class Data {
     // update scales
     this.updateScales()
     // produce GeoJSON
-    const keysToCopy = this.dataKeys()
     const features = []
     for (let c of this._cells) {
       if (c.vertices !== undefined) features.push({
@@ -149,7 +182,7 @@ module.exports.Data = class Data {
           type: 'Polygon',
           coordinates: [c.vertices],
         },
-        properties: this.dataForId(c.id),
+        properties: {id: c.id, ...this.dataForId(c.id)},
       })
     }
     this._geoJSON = {

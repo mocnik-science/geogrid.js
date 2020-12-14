@@ -17,8 +17,10 @@ module.exports.RendererWebGL = class RendererWebGL {
     const pixiGraphics = new PIXI.Graphics()
     pixiContainer.addChild(pixiGraphics)
     let prevZoom
-    let prevOverwriteColor
-    let prevOverwriteSize
+    let prevOverwriteColor = null
+    let prevOverwriteSize = null
+    let prevOverwriteContourColor = null
+    let prevOverwriteContourWidth = null
     this._webgl = L.pixiOverlay(utils => {
       const geoJSON = t._data.getGeoJSON()
       // if no geoJSON present, do nothing
@@ -34,10 +36,17 @@ module.exports.RendererWebGL = class RendererWebGL {
       // colours
       const cellContourColor = pixiColor(t._options.cellContourColor)
       // check whether a referesh is need
-      const needsRefresh = prevZoom != zoom || prevOverwriteColor != JSON.stringify(this._data.getOverwriteColor()) || prevOverwriteSize != JSON.stringify(this._data.getOverwriteSize())
+      const needsRefresh =
+        prevZoom != zoom ||
+        prevOverwriteColor != JSON.stringify(this._data.getOverwriteColor()) ||
+        prevOverwriteSize != JSON.stringify(this._data.getOverwriteSize()) ||
+        prevOverwriteContourColor != JSON.stringify(this._data.getOverwriteContourColor()) ||
+        prevOverwriteContourWidth != JSON.stringify(this._data.getOverwriteContourWidth())
       prevZoom = zoom
       prevOverwriteColor = JSON.stringify(this._data.getOverwriteColor())
       prevOverwriteSize = JSON.stringify(this._data.getOverwriteSize())
+      prevOverwriteContourColor = JSON.stringify(this._data.getOverwriteContourColor())
+      prevOverwriteContourWidth = JSON.stringify(this._data.getOverwriteContourWidth())
       // if new geoJSON, cleanup and initialize
       if (geoJSON._webgl_initialized == null || needsRefresh) {
         geoJSON._webgl_initialized = true
@@ -46,12 +55,20 @@ module.exports.RendererWebGL = class RendererWebGL {
       }
       // draw geoJSON features
       for (const feature of geoJSON.features) {
-        const notInitialized = (feature._webgl_coordinates == null)
+        const notInitialized = feature._webgl_coordinates == null
         if (notInitialized) feature._webgl_coordinates = t._data.cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
         if (notInitialized || needsRefresh) {
+          // contour
+          const contourColor = t._data.cellContourColor(feature.properties.id, true)
+          const contourWidth = t._data.cellContourWidth(feature.properties.id, true)
+          const considerContour = contourColor !== null || contourWidth !== null
+          if (considerContour) pixiGraphics.lineStyle((contourWidth !== null ? contourWidth : t._options.cellContourWidth) / scale, contourColor !== null ? pixiColor(contourColor) : cellContourColor, 1)
+          // draw
           pixiGraphics.beginFill(pixiColor(t._data.cellColor(feature.properties.id, feature.properties)), t._options.cellColorOpacity)
           pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
           pixiGraphics.endFill()
+          // contour
+          if (considerContour) pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, 1)
         }
       }
       renderer.render(container)
