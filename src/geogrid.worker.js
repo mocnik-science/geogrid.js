@@ -269,5 +269,5 @@ module.exports.isea3hWorker = () => {
   }
 
   // find neighbors of a given cell
-  const findNeighbors = idLong => cacheNeighbors[idLong].map(idLong2 => cleanupCell(cells[idLong2]))
+  const findNeighbors = idLong => cacheNeighbors[idLong] !== undefined ? null : cacheNeighbors[idLong].map(idLong2 => cleanupCell(cells[idLong2]))
 }

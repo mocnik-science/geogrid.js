@@ -109,7 +109,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
           for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
           break
         case 'resultFindNeighbors':
-          this._execPluginCallback(d.uid, d.neighbors.map(cell => eventForPlugin(cell)))
+          this._execPluginCallback(d.uid, d.neighbors === null ? null : d.neighbors.map(cell => eventForPlugin(cell)))
           break
       }
     }
