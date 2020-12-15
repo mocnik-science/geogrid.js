@@ -137,7 +137,6 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
 
     // event for plugin
-    const t = this
     const eventForPlugin = cell => ({
       lat: cell.lat,
       lon: cell.lon,
