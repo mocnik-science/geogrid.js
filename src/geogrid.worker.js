@@ -245,7 +245,7 @@ module.exports.isea3hWorker = () => {
     
     // clean up data about cells
     debugStep('clean up data about cells', 60)
-    const cells2 = new Array(cells.length)
+    const cells2 = new Array(Object.keys(cells).length)
     let i = -1
     for (let id in cells) {
       i++

@@ -15,7 +15,7 @@ let RendererSVG
 if (leafletLoaded && d3Loaded) {
   require('./geogrid.scss')
   RendererWebGL = require('./geogrid.rendererWebGL.js').RendererWebGL
-  RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG  
+  RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG
 }
 const defaultOptions = require('./geogrid.core.js').defaultOptions
 const initCore = require('./geogrid.core.js').initCore
@@ -94,14 +94,16 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     const eventListener = d => {
       if (this._map) switch (d.task) {
         case 'resultPluginsHover':
-          if (!this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
+          if (!d.cell || !this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
             for (const cell of this._hoveredCells) {
               const ePlugin = eventForPlugin(cell)
               if (cell.idLong !== d.cell.idLong) for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
             }
-            const ePlugin = eventForPlugin(d.cell)
-            this._hoveredCells = [d.cell]
-            for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
+            if (d.cell) {
+              const ePlugin = eventForPlugin(d.cell)
+              this._hoveredCells = [d.cell]
+              for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
+            }
           }
           break
         case 'resultPluginsClick':
@@ -318,26 +320,23 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   _visualizeData: function() {
     const t = this
     const geoJSON = this._data.getGeoJSON()
-    // visualize
-    if (geoJSON.features.length) {
-      // visualize centroids
-      if (t._centroids != null) for (let c of t._centroids) c.remove()
-      t._centroids = []
-      if (t.options.debug) {
-        this._progress.debugStep('visualize centroids', 75)
-        for (let d of t._data.getCells()) {
-          const circle = L.circle([d.lat, d.lon], {
-            color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
-            fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
-            radius: 3}
-          ).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
-          circle._d = d
-          t._centroids.push(circle)
-        }
+    // visualize centroids
+    if (t._centroids != null) for (let c of t._centroids) c.remove()
+    t._centroids = []
+    if (t.options.debug) {
+      this._progress.debugStep('visualize centroids', 75)
+      for (let d of t._data.getCells()) {
+        const circle = L.circle([d.lat, d.lon], {
+          color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
+          fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
+          radius: 3}
+        ).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
+        circle._d = d
+        t._centroids.push(circle)
       }
-      // visualize cells
-      this._render()
     }
+    // visualize cells
+    this._render()
     // layer has been initialized
     if (!this._initialized) {
       this.fire('loadComplete')

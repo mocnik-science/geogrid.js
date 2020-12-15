@@ -13,7 +13,7 @@ module.exports.Progress = class Progress {
       const backgroundColor = d3.color(this.options.colorProgressBar)
       backgroundColor.opacity = .7
       this._progressBar.style.boxShadow = `0 1px 4px ${backgroundColor}`
-      document.getElementsByTagName('body')[0].appendChild(this._progressBar)  
+      document.getElementsByTagName('body')[0].appendChild(this._progressBar)
     }
     this.progress(100)
   }
