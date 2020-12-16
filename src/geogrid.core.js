@@ -1,12 +1,12 @@
 "use strict"
 
 /****** IMPORTS ******/
-const Data = require('./geogrid.data.js').Data
-const Progress = require('./geogrid.progress.js').Progress
-const isea3hWorker = require('./geogrid.worker.js').isea3hWorker
+import {Data} from './geogrid.data.js'
+import {Progress} from './geogrid.progress.js'
+import Worker from './geogrid.worker.js'
 
 /****** HELPING FUNCTIONS ******/
-module.exports.defaultOptions = {
+export const defaultOptions = {
   url: null,
   data: null,
   silent: true,
@@ -47,22 +47,9 @@ module.exports.defaultOptions = {
   bboxViewPad: 1.05,
   bboxDataPad: 1.25,
   renderer: 'webgl',
-  urlLibs: '/libs',
 }
 
-const createWebWorker = (options) => {
-  let url = null
-  if (options.urlLibs.startsWith('http')) url = options.urlLibs
-  else if (options.urlLibs.startsWith('/')) url = `${document.location.protocol}//${document.location.hostname}${document.location.port ? `:${document.location.port}` : ''}${options.urlLibs}`
-  else {
-    url = document.location.href.split('/')
-    url = `${url.splice(0, url.length - 1).join('/')}/${options.urlLibs}`
-  }
-  const workerFunctionString = `(${isea3hWorker.toString()})()`.replace('importScripts("./vptree.js/vptree.min.js")', `importScripts('${url}/vptree.js/vptree.min.js')`)
-  return new Worker(URL.createObjectURL(new Blob([workerFunctionString])))
-}
-
-module.exports.initCore = (options, eventListener, callback, visual) => {
+export const initCore = (options, eventListener, callback, visual) => {
   // init options I
   if (options.debug) options.silent = false
 
@@ -90,7 +77,7 @@ module.exports.initCore = (options, eventListener, callback, visual) => {
   const _data = new Data(options)
 
   // create web worker
-  const _webWorker = createWebWorker(options)
+  const _webWorker = new Worker()
   _webWorker.addEventListener('message', e => {
     const d = JSON.parse(e.data)
     switch (d.task) {

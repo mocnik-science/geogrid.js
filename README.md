@@ -23,7 +23,7 @@ The library `geogrid.js` requires some other libraries to be loaded:
 * [Leaflet.PixiOverlay](https://github.com/manubb/Leaflet.PixiOverlay)
 * [D3.js](https://d3js.org)
 
-In addition, the [vptree.js library](http://fpirsch.github.io/vptree.js/) needs to be placed in the directory `/libs`.  In particular, the library should be made accessible as `/libs/vptree.js/vptree.min.js`.
+In addition, the library [vptree.js library](http://fpirsch.github.io/vptree.js/) is included and shipped with `geogrid.js` under the [ISC license](https://raw.githubusercontent.com/fpirsch/vptree.js/master/LICENCE).
 
 In order to use the `ISEA3HLayer`, a Leaflet map needs to be loaded first, for example, like follows:
 ```javascript
@@ -141,7 +141,6 @@ The following options are available:
 | `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.25` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `renderer` | `'webgl'`\|`'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
-| `urlLibs` | String | `'/libs'` | URL under which the libraries can be found. In particular, the file `vptree.js/vptree.min.js` should exist in the directory `urlLibs`. |
 
 ## Plugins
 
@@ -235,11 +234,10 @@ The following methods of the `L.ISEA3HLayerPlugin` are available:
 
 ## Compute GeoJSON only
 
-In some cases, one might not want to visualize grid data by the use of Leaflet but to only compute the corresponding GeoJSON.  The library thus provides a corresponding function to compute the GeoJSON in an efficient way.  For this, neither of the libraries needs to be loaded.  Only [vptree.js library](http://fpirsch.github.io/vptree.js/) is needed in the corresponding directory, per default `/libs`.  For data formatted as described at the top of this page, the GeoJSON can be computed as follows:
+In some cases, one might not want to visualize grid data by the use of Leaflet but to only compute the corresponding GeoJSON.  The library thus provides a corresponding function to compute the GeoJSON in an efficient way.  For this, neither of the libraries needs to be loaded.  For data formatted as described at the top of this page, the GeoJSON can be computed as follows:
 ```javascript
 L.isea3hToGeoJSON({
   data: data,
-  urlLibs: 'libs',
 }, geoJSON => console.log(geoJSON))
 ```
 

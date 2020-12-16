@@ -21,7 +21,7 @@ const tileIDToLatLon = (x, y, zoom) => {
 let instanceDownload = null
 
 /****** Download ******/
-module.exports.Download = class Download {
+export class Download {
   constructor(options, map, progress) {
     if (this._url == options.url &&
       this._silent == options.silent &&

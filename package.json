@@ -18,10 +18,13 @@
     "bower": "^1.8.8",
     "css-loader": "^5.0.1",
     "node-sass": "^5.0.0",
+    "remove-files-webpack-plugin": "^1.4.4",
     "sass-loader": "^10.1.0",
     "style-loader": "^2.0.0",
+    "vptree.js": "https://github.com/fpirsch/vptree.js/",
     "webpack": "^5.10.0",
-    "webpack-sources": "^2.2.0"
+    "webpack-sources": "^2.2.0",
+    "worker-loader": "^3.0.6"
   },
   "devDependencies": {
     "webpack-cli": "^4.2.0"

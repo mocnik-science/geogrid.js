@@ -10,16 +10,11 @@ if (!leafletLoaded) {
 if (!d3Loaded) console.log('[geogrid.js] D3.js needs to be loaded first / only pure functions available')
 
 /****** IMPORTS ******/
-let RendererWebGL
-let RendererSVG
-if (leafletLoaded && d3Loaded) {
-  require('./geogrid.scss')
-  RendererWebGL = require('./geogrid.rendererWebGL.js').RendererWebGL
-  RendererSVG = require('./geogrid.rendererSVG.js').RendererSVG
-}
-const defaultOptions = require('./geogrid.core.js').defaultOptions
-const initCore = require('./geogrid.core.js').initCore
-const Download = require('./geogrid.download.js').Download
+import './geogrid.scss'
+import {defaultOptions, initCore} from './geogrid.core.js'
+import {Download} from './geogrid.download.js'
+import {RendererSVG} from './geogrid.rendererSVG.js'
+import {RendererWebGL} from './geogrid.rendererWebGL.js'
 
 /****** PURE FUNCTION ******/
 L.isea3hToGeoJSON = (options, callback) => {
@@ -221,7 +216,6 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (options.bboxViewPad != undefined) notYetImplemented('bboxViewPad')
     if (options.bboxDataPad != undefined) notYetImplemented('bboxDataPad')
     if (options.renderer != undefined) notYetImplemented('renderer')
-    if (options.urlLibs != undefined) notYetImplemented('urlLibs')
     // re-initialize
     if (reinitialize) {
       const map = this._map

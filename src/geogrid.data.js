@@ -1,7 +1,7 @@
 "use strict"
 
 /****** DATA ******/
-module.exports.Data = class Data {
+export class Data {
   constructor(options) {
     this._options = options
     this._dataById = null

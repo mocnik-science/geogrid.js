@@ -1,7 +1,7 @@
 "use strict"
 
 /****** RENDERER SVG ******/
-module.exports.RendererSVG = class RendererSVG {
+export class RendererSVG {
   constructor(options, progress, data) {
     this._options = options
     this._progress = progress

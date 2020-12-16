@@ -1,7 +1,7 @@
 "use strict"
 
 /****** RENDERER WEBGL ******/
-module.exports.RendererWebGL = class RendererWebGL {
+export class RendererWebGL {
   constructor(options, progress, data) {
     this._options = options
     this._progress = progress

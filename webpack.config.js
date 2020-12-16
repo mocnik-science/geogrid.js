@@ -1,5 +1,6 @@
 const path = require('path')
 const MinifyPlugin = require('babel-minify-webpack-plugin')
+const RemovePlugin = require('remove-files-webpack-plugin')
 
 module.exports = {
   entry: './src/geogrid.js',
@@ -10,13 +11,27 @@ module.exports = {
   module: {
     rules: [{
       test: /\.js$/,
-      exclude: [/src\/geogrid.worker.js/],
+      exclude: /\.worker\.js/,
       use: {
         loader: 'babel-loader',
         options: {
           presets: ['@babel/preset-env'],
         },
       },
+    }, {
+      test: /\.worker\.js$/,
+      use: [{
+        loader: 'worker-loader',
+        options: {
+          filename: '[name]:[hash:8].js',
+          inline: 'no-fallback',
+        },
+      }, {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env'],
+        },
+      }],
     }, {
       test: /\.scss$/,
       use: [{
@@ -35,6 +50,14 @@ module.exports = {
   },
   devtool: 'source-map',
   plugins: [
-    new MinifyPlugin({}),
+    new MinifyPlugin(),
+    new RemovePlugin({
+      after: {
+        test: [{
+          folder: './dist',
+          method: absPath => new RegExp(/\.worker\.js(\.map)?$/).test(absPath),
+        }],
+      },
+    }),
   ],
 }

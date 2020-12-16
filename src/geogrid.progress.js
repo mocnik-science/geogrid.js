@@ -1,7 +1,7 @@
 "use strict"
 
 /****** PROGRESS ******/
-module.exports.Progress = class Progress {
+export class Progress {
   constructor(options, visual) {
     this.options = options
     this.visual = visual
