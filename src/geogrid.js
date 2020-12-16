@@ -19,6 +19,7 @@ if (leafletLoaded && d3Loaded) {
 }
 const defaultOptions = require('./geogrid.core.js').defaultOptions
 const initCore = require('./geogrid.core.js').initCore
+const Download = require('./geogrid.download.js').Download
 
 /****** PURE FUNCTION ******/
 L.isea3hToGeoJSON = (options, callback) => {
@@ -290,19 +291,13 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 2.5)
-    const b = this._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
-    if (this.options.url) {
-      const r = this._resolutionData = this.options.resolution(this._map.getZoom())
-      let url = this.options.url
-        .replace('{bbox}', b.toBBoxString())
-        .replace('{resolution}', r)
-      for (const p in this.options.parameters) url = url.replace(`{${p}}`, (this.options.parameters[p] !== null) ? this.options.parameters[p] : '')
-      if (this.options.debug || !this.options.silent) this._progress.log(url)
-      d3.json(url).then(data => {
-        t.options.data = data
-        t._processData()
-      }).catch(console.debug)
-    } else this._processData()
+    if (this.options.url) (new Download(this.options, this._map, this._progress)).load((data, bbox, resolution) => {
+      t.options.data = data
+      t._bboxData = bbox
+      t._resolutionData = resolution
+      t._processData()
+    })
+    else this._processData()
   },
   _processData: function() {
     // process data in web worker

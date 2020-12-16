@@ -18,6 +18,7 @@ module.exports.defaultOptions = {
     if (s <= 9) return 12
     return 14
   },
+  tileZoom: 7,
   parameters: {
     date: new Date().toLocaleDateString(),
     dateFrom: null,
