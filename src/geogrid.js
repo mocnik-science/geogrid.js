@@ -286,7 +286,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   _updateData: function() {
     const t = this
     // proceed only if data is available
-    if (this.options.data === null) return
+    if (this.options.url === null && this.options.data === null) return
     // download the data
     this._progress.showProgress()
     this._progress.debugStep('download data', 2.5)
