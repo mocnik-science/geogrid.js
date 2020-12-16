@@ -275,23 +275,24 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       idLong: cell.idLong,
     })
   },
-  _paddedBounds() {
+  _paddedBounds: function() {
     return this._map.getBounds().pad(this.options.bboxViewPad - 1)
   },
   _updateData: function() {
     const t = this
     // proceed only if data is available
-    if (this.options.url === null && this.options.data === null) return
+    if (t.options.url === null && t.options.data === null) return
     // download the data
-    this._progress.showProgress()
-    this._progress.debugStep('download data', 2.5)
-    if (this.options.url) (new Download(this.options, this._map, this._progress)).load((data, bbox, resolution) => {
+    t._progress.showProgress()
+    t._progress.debugStep(t.options.url !== null ? 'download data' : 'update data', 2.5)
+    if (t.options.url !== null) (new Download(t.options, t._map, t._progress)).load((data, bbox, resolution) => {
       t.options.data = data
       t._bboxData = bbox
       t._resolutionData = resolution
+      t.fire('dataUpdated', {data: t.options.data})
       t._processData()
     })
-    else this._processData()
+    else t._processData()
   },
   _processData: function() {
     // process data in web worker
@@ -325,11 +326,11 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       }
     }
     // visualize cells
-    this._render()
+    t._render()
     // layer has been initialized
-    if (!this._initialized) {
-      this.fire('loadComplete')
-      this._initialized = true
+    if (!t._initialized) {
+      t.fire('loadComplete')
+      t._initialized = true
     }
   },
   _onMouseMove: function(e) {

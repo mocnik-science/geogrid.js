@@ -1,6 +1,5 @@
 "use strict"
 
-
 const radians = degrees => degrees * Math.PI / 180
 const degrees = radians => radians * 180 / Math.PI
 

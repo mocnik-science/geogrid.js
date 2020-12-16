@@ -75,6 +75,7 @@ let tree = null
 
 // helping function: clean up data about cells
 const cleanupCell = c => {
+  if (c === undefined) return null
   const cell = {
     id: c.id,
     lat: c.lat,
