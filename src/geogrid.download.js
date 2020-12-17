@@ -27,21 +27,18 @@ export class Download {
       this._debug == options.debug &&
       this._resolution == options.resolution &&
       this._tileZoom == options.tileZoom &&
-      JSON.stringify(this._parameters) == JSON.stringify(options.parameters) &&
-      this._bboxDataPad == options.bboxDataPad) return instanceDownload
+      JSON.stringify(this._parameters) == JSON.stringify(options.parameters)) return instanceDownload
     this._url = options.url
     this._silent = options.silent
     this._debug = options.debug
     this._resolution = options.resolution
     this._tileZoom = options.tileZoom
     this._parameters = options.parameters
-    this._bboxDataPad = options.bboxDataPad
     this._map = map
     this._progress = progress
     instanceDownload = this
   }
-  load(callback) {
-    const bbox = this._map.getBounds().pad(this._bboxDataPad - 1)
+  load(bbox, callback) {
     const resolution = this._resolution(this._map.getZoom())
     if (this._url.includes('{bbox}')) {
       let url = this._url
@@ -60,7 +57,7 @@ export class Download {
       const xy = []
       for (let x = xMin; x <= xMax; x++) for (let y = yMin; y <= yMax; y++) xy.push([x, y])
 
-      this.download(xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y)), data => callback(data, bbox, resolution))
+      this.download(xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y)), data => callback(data, resolution))
     }
   }
   download(urls, callback) {

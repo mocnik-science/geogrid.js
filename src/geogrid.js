@@ -285,9 +285,9 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     // download the data
     t._progress.showProgress()
     t._progress.debugStep(t.options.url !== null ? 'download data' : 'update data', 2.5)
-    if (t.options.url !== null) (new Download(t.options, t._map, t._progress)).load((data, bbox, resolution) => {
+    t._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
+    if (t.options.url !== null) (new Download(t.options, t._map, t._progress)).load(t._bboxData, (data, resolution) => {
       t.options.data = data
-      t._bboxData = bbox
       t._resolutionData = resolution
       t.fire('dataUpdated', {data: t.options.data})
       t._processData()
