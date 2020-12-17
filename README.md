@@ -51,6 +51,8 @@ As an option, a URL needs to be provided under which data aggregated by the ISEA
 }
 ```
 
+
+
 The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive IDs*, as is described in:
 
 * F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
@@ -141,6 +143,15 @@ The following options are available:
 | `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.25` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `renderer` | `'webgl'`\|`'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
+
+## Events
+
+The following events are available:
+
+| Event | Description |
+| ----- | ----------- |
+| `dataDownloaded`| This event is fired whenever new data is downloaded. |
+| `loadComplete` | This event is fired when the data has been rendered the first time. |
 
 ## Plugins
 

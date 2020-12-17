@@ -289,7 +289,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (t.options.url !== null) (new Download(t.options, t._map, t._progress)).load(t._bboxData, (data, resolution) => {
       t.options.data = data
       t._resolutionData = resolution
-      t.fire('dataUpdated', {data: t.options.data})
+      t.fire('dataDownloaded', {data: t.options.data})
       t._processData()
     })
     else t._processData()
@@ -328,7 +328,9 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     t._render()
     // layer has been initialized
     if (!t._initialized) {
-      t.fire('loadComplete')
+      setTimeout(() => {
+        t.fire('loadComplete')
+      }, 20)
       t._initialized = true
     }
   },
