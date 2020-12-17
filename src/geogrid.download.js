@@ -60,14 +60,16 @@ export class Download {
       ds[url] = data
       if (Object.keys(ds).length < urls.length) return
       let result = null
-      for (const d of Object.values(ds)) if (result === null) result = d
-      else result.data = result.data.concat(d.data)
+      for (const d of Object.values(ds)) if (d !== null && d.data !== null) {
+        if (result === null) result = {...d}
+        else result.data = result.data.concat(d.data)
+      }
       callback(result)
     }
     // start downloads
     for (const url of urls) {
       if (this._debug || !this._silent) this._progress.log(url)
-      d3.json(url).then(data => useData(url, data)).catch(console.debug)
+      d3.json(url).then(data => useData(url, data)).catch(e => useData(url, null))
     }
   }
 }
