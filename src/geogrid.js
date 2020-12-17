@@ -144,34 +144,36 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
   },
   onAdd: function(map) {
+    if (!map) return
     this._map = map
     this._renderer.add(map)
     this._updateData()
 
     // plugins
-    this._map.on('mousemove', this._onMouseMove, this)
-    this._map.on('mouseout', this._onMouseOut, this)
-    this._map.on('click', this._onClick, this)
+    map.on('mousemove', this._onMouseMove, this)
+    map.on('mouseout', this._onMouseOut, this)
+    map.on('click', this._onClick, this)
     
     // events
-    this._map.on('viewreset', this._onReset, this)
-    this._map.on('zoomend', this._onReset, this)
-    this._map.on('moveend', this._onReset, this)
+    map.on('viewreset', this._onReset, this)
+    map.on('zoomend', this._onReset, this)
+    map.on('moveend', this._onReset, this)
   },
   onRemove: function(map) {
+    if (!map) return
     this._progress.remove()
     this._renderer.remove(map)
     this._webWorker.terminate()
-    
+
     // plugins
-    this._map.off('mousemove', this._onMouseMove, this)
-    this._map.off('mouseout', this._onMouseOut, this)
-    this._map.off('click', this._onClick, this)
+    map.off('mousemove', this._onMouseMove, this)
+    map.off('mouseout', this._onMouseOut, this)
+    map.off('click', this._onClick, this)
     
     // events
-    this._map.off('viewreset', this._onReset, this)
-    this._map.off('zoomend', this._onReset, this)
-    this._map.off('moveend', this._onReset, this)
+    map.off('viewreset', this._onReset, this)
+    map.off('zoomend', this._onReset, this)
+    map.off('moveend', this._onReset, this)
 
     this._map = null
   },
