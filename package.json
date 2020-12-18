@@ -23,7 +23,7 @@
     "build": "webpack",
     "clean": "rm -rf node_modules && rm -rf dist && rm -rf example/libs",
     "postinstall": "webpack",
-    "prepublish": "yarn clean && yarn install"
+    "prepublish": "yarn build"
   },
   "author": "Franz-Benjamin Mocnik <mail@mocnik-science.net> (http://www.mocnik-science.net)",
   "license": "MIT",
