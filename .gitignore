@@ -1,6 +1,7 @@
 dist/
 example/libs/**
 node_modules/
-npm-debug.log
+.npmrc
 package-lock.json
 yarn.lock
+yarn-error.log
