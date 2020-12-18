@@ -76,9 +76,14 @@ export const initCore = (options, eventListener, callback, visual) => {
     }
   }
 
-  if (visual || !options.url) {
+  if (visual) {
     // proceed with the initialization
     return initCore2(options, eventListener, callback, _progress)
+  } else if (!options.url) {
+    // proceed with the initialization
+    const {_processDataInWebWorker} = initCore2(options, eventListener, callback, _progress)
+    // process
+    _processDataInWebWorker()
   } else if (options.pureBBox) new Download(options, options.pureResolution, _progress).load(options.pureBBox, data => {
     // save the data
     options.data = data
