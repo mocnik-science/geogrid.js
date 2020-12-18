@@ -1,6 +1,5 @@
 const path = require('path')
 const MinifyPlugin = require('babel-minify-webpack-plugin')
-const RemovePlugin = require('remove-files-webpack-plugin')
 
 module.exports = {
   entry: './src/geogrid.js',
