@@ -1,14 +1,22 @@
 {
-  "name": "geogrid.js",
+  "name": "@mocnik-science/geogrid.js",
   "version": "0.0.1",
   "description": "Leaflet plugin for Visualizing Discrete Global Grid Systems",
+  "keywords": ["visualization", "map", "grid", "ISEA", "DGGS", "leaflet"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mocnik-science/geogrid.js"
+  },
+  "main": "dist/geogrid.min.js",
+  "unpkg": "dist/geogrid.min.js",
+  "fiels": ["dist"],
   "scripts": {
     "build": "webpack",
-    "build-example": "mkdir -p example/libs && cp dist/* example/libs/",
     "clean": "rm -rf dist && rm -rf example/libs",
-    "postinstall": "webpack"
+    "postinstall": "webpack",
+    "prepublish": "rm -rf node_modues && clean && yarn install"
   },
-  "author": "Franz-Benjamin Mocnik <mail@mocnik-science.net>",
+  "author": "Franz-Benjamin Mocnik <mail@mocnik-science.net> (http://www.mocnik-science.net)",
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.12.10",
@@ -20,7 +28,7 @@
     "remove-files-webpack-plugin": "^1.4.4",
     "sass-loader": "^10.1.0",
     "style-loader": "^2.0.0",
-    "vptree.js": "https://github.com/fpirsch/vptree.js/",
+    "vptree.js": "fpirsch/vptree.js",
     "webpack": "^5.10.0",
     "webpack-sources": "^2.2.0",
     "worker-loader": "^3.0.6"
