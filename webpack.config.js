@@ -51,13 +51,5 @@ module.exports = {
   devtool: 'source-map',
   plugins: [
     new MinifyPlugin(),
-    new RemovePlugin({
-      after: {
-        test: [{
-          folder: './dist',
-          method: absPath => new RegExp(/\.worker\.js(\.map)?$/).test(absPath),
-        }],
-      },
-    }),
   ],
 }
