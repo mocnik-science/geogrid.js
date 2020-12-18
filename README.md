@@ -16,14 +16,19 @@ This library is compatible with the framework [**Measures REST**](https://github
 
 ## Use the Library
 
-The library `geogrid.js` requires some other libraries to be loaded:
+To load the library, include the following in your header:
+```html
+<script src="https://unpkg.com/geogrid.js"></script>
+```
+
+In addition, the library `geogrid.js` requires some further libraries to be loaded:
 
 * [Leaflet](http://leafletjs.com)
 * [PixiJS](http://www.pixijs.com)
 * [Leaflet.PixiOverlay](https://github.com/manubb/Leaflet.PixiOverlay)
 * [D3.js](https://d3js.org)
 
-In addition, the library [vptree.js library](http://fpirsch.github.io/vptree.js/) is included and shipped with `geogrid.js` under the [ISC license](https://raw.githubusercontent.com/fpirsch/vptree.js/master/LICENCE).
+The library [vptree.js library](http://fpirsch.github.io/vptree.js/) is included and shipped with `geogrid.js` under the [ISC license](https://raw.githubusercontent.com/fpirsch/vptree.js/master/LICENCE).
 
 In order to use the `ISEA3HLayer`, a Leaflet map needs to be loaded first, for example, like follows:
 ```javascript
