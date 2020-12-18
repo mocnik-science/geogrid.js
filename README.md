@@ -51,8 +51,6 @@ As an option, a URL needs to be provided under which data aggregated by the ISEA
 }
 ```
 
-
-
 The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive IDs*, as is described in:
 
 * F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
@@ -70,12 +68,7 @@ L.isea3hLayer({
 
 ## Example
 
-An example can be found in the subdirectory [example](https://github.com/mocnik-science/geogrid.js/tree/master/example).  To run the example, please generate first the file `geogrid.min.js` as described below, and then run:
-```bash
-npm run build-example
-```
-
-Observe that the example presumes a local instance of [Measures REST](https://github.com/giscience/measures-rest).
+An example can be found in the subdirectory [example](https://github.com/mocnik-science/geogrid.js/tree/master/example).  Observe that the example `index-with-server.html` presumes a local instance of [Measures REST](https://github.com/giscience/measures-rest).
 
 ## Options
 
