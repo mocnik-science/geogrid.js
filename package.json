@@ -1,6 +1,6 @@
 {
   "name": "geogrid.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Leaflet plugin for Visualizing Discrete Global Grid Systems",
   "keywords": [
     "visualization",
