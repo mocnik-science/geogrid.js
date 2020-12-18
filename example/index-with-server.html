@@ -10,7 +10,7 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.8/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet-pixi-overlay@1.8.1/L.PixiOverlay.min.js"></script>
-    <script src="libs/geogrid.min.js"></script>
+    <script src="https://unpkg.com/geogrid.js"></script>
     <style>
       #map {
         position: absolute;
@@ -26,7 +26,6 @@
         L.stamenTileLayer('toner-lite').addTo(map);
         L.isea3hLayer({
           url: 'http://localhost:8080/api/measure-test/grid?bbox={bbox}&resolution={resolution}',
-          urlLibs: '../example/libs',
         }).addTo(map);
       });
     </script>
