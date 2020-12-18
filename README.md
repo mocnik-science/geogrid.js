@@ -143,6 +143,8 @@ The following options are available:
 | `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.25` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `renderer` | `'webgl'`\|`'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
+| `pureBBox` | `L.LatLngBounds` | `null` | Bounding box for which the data is downloaded in case of the pure function (`L.isea3hToGeoJSON`; see below). |
+| `pureResolution` | `Number` | `7` | Resolution that is used for the data download in case of the pure function (`L.isea3hToGeoJSON`; see below). |
 
 ## Events
 
@@ -249,6 +251,15 @@ In some cases, one might not want to visualize grid data by the use of Leaflet b
 ```javascript
 L.isea3hToGeoJSON({
   data: data,
+}, geoJSON => console.log(geoJSON))
+```
+
+Instead of the data, a url can be provided as well.  In this case, the bounding box and the resolution can be provided.
+```javascript
+L.isea3hToGeoJSON({
+  url: '...',
+  pureBBox: null,
+  pureResolution: 7,
 }, geoJSON => console.log(geoJSON))
 ```
 

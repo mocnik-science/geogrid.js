@@ -2,6 +2,7 @@
 
 /****** IMPORTS ******/
 import {Data} from './geogrid.data.js'
+import {Download} from './geogrid.download.js'
 import {Progress} from './geogrid.progress.js'
 import Worker from './geogrid.worker.js'
 
@@ -47,6 +48,8 @@ export const defaultOptions = {
   bboxViewPad: 1.05,
   bboxDataPad: 1.25,
   renderer: 'webgl',
+  pureBBox: null,
+  pureResolution: 7,
 }
 
 export const initCore = (options, eventListener, callback, visual) => {
@@ -73,6 +76,21 @@ export const initCore = (options, eventListener, callback, visual) => {
     }
   }
 
+  if (visual || !options.url) {
+    // proceed with the initialization
+    return initCore2(options, eventListener, callback, _progress)
+  } else if (options.pureBBox) new Download(options, options.pureResolution, _progress).load(options.pureBBox, data => {
+    // save the data
+    options.data = data
+    options.url = null
+    // proceed with the initialization
+    const {_processDataInWebWorker} = initCore2(options, eventListener, callback, _progress)
+    // process
+    _processDataInWebWorker()
+  })
+}
+
+export const initCore2 = (options, eventListener, callback, _progress) => {
   // init data
   const _data = new Data(options)
 

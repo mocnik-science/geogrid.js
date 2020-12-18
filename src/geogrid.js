@@ -21,9 +21,7 @@ L.isea3hToGeoJSON = (options, callback) => {
   // set options
   options = Object.assign({}, () => {}, defaultOptions, options)
   // init core
-  const {_processDataInWebWorker} = initCore(options, d => {}, callback, false)
-  // process
-  _processDataInWebWorker()
+  initCore(options, d => {}, callback, false)
 }
 
 /****** PLUGIN ******/
@@ -288,7 +286,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     t._progress.showProgress()
     t._progress.debugStep(t.options.url !== null ? 'download data' : 'update data', 2.5)
     t._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
-    if (t.options.url !== null) (new Download(t.options, t._map, t._progress)).load(t._bboxData, (data, resolution) => {
+    const resolution = t.options.resolution(t._map.getZoom())
+    if (t.options.url !== null) new Download(t.options, resolution, t._progress).load(t._bboxData, data => {
       t.options.data = data
       t._resolutionData = resolution
       t.fire('dataDownloaded', {data: t.options.data})

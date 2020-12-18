@@ -13,39 +13,39 @@ let instanceDownload = null
 
 /****** Download ******/
 export class Download {
-  constructor(options, map, progress) {
+  constructor(options, resolution, progress) {
     if (this._url == options.url &&
       this._silent == options.silent &&
       this._debug == options.debug &&
       this._resolution == options.resolution &&
       this._tileZoom == options.tileZoom &&
-      JSON.stringify(this._parameters) == JSON.stringify(options.parameters)) return instanceDownload
+      JSON.stringify(this._parameters) == JSON.stringify(options.parameters) &&
+      this._resolution == resolution) return instanceDownload
     this._url = options.url
     this._silent = options.silent
     this._debug = options.debug
     this._resolution = options.resolution
     this._tileZoom = options.tileZoom
     this._parameters = options.parameters
-    this._map = map
+    this._resolution = resolution
     this._progress = progress
     instanceDownload = this
   }
   load(bbox, callback) {
-    const resolution = this._resolution(this._map.getZoom())
     if (this._url.includes('{bbox}')) {
       let url = this._url
         .replace('{bbox}', bbox.toBBoxString())
-        .replace('{resolution}', resolution)
+        .replace('{resolution}', this._resolution)
       this.download([url], data => callback(data, bbox, resolution))
     } else {
       const url = this._url
-        .replace('{resolution}', resolution)
+        .replace('{resolution}', this._resolution)
         .replace('{z}', this._tileZoom)
       const [xMin, yMin] = latLonToTileID(bbox.getNorth(), bbox.getWest(), this._tileZoom)
       const [xMax, yMax] = latLonToTileID(bbox.getSouth(), bbox.getEast(), this._tileZoom)
       const xy = []
       for (let x = xMin; x <= xMax; x++) for (let y = yMin; y <= yMax; y++) xy.push([x, y])
-      this.download(xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y)), data => callback(data, resolution))
+      this.download(xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y)), callback)
     }
   }
   download(urls, callback) {
@@ -68,7 +68,7 @@ export class Download {
     }
     // start downloads
     for (const url of urls) {
-      if (this._debug || !this._silent) this._progress.log(url)
+      if ((this._debug || !this._silent) && this._progress) this._progress.log(url)
       d3.json(url).then(data => useData(url, data)).catch(e => useData(url, null))
     }
   }
