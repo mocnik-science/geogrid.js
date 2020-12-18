@@ -4,7 +4,7 @@
   "description": "Leaflet plugin for Visualizing Discrete Global Grid Systems",
   "scripts": {
     "build": "webpack",
-    "build-example": "mkdir -p example/libs && cp dist/* example/libs/ && cd example && bower install",
+    "build-example": "mkdir -p example/libs && cp dist/* example/libs/",
     "clean": "rm -rf dist && rm -rf example/libs",
     "postinstall": "webpack"
   },
@@ -15,7 +15,6 @@
     "@babel/preset-env": "^7.12.10",
     "babel-loader": "^8.2.2",
     "babel-minify-webpack-plugin": "^0.3.1",
-    "bower": "^1.8.8",
     "css-loader": "^5.0.1",
     "node-sass": "^5.0.0",
     "remove-files-webpack-plugin": "^1.4.4",
