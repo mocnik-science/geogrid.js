@@ -1,5 +1,4 @@
 const path = require('path')
-const MinifyPlugin = require('babel-minify-webpack-plugin')
 
 module.exports = {
   entry: './src/geogrid.js',
@@ -22,7 +21,7 @@ module.exports = {
       use: [{
         loader: 'worker-loader',
         options: {
-          filename: '[name]:[hash:8].js',
+          filename: '[name]:[fullhash:8].js',
           inline: 'no-fallback',
         },
       }, {
@@ -48,7 +47,4 @@ module.exports = {
     colors: true,
   },
   devtool: 'source-map',
-  plugins: [
-    new MinifyPlugin(),
-  ],
 }
