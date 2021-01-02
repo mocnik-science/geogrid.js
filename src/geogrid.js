@@ -11,7 +11,7 @@ if (!d3Loaded) console.log('[geogrid.js] D3.js needs to be loaded first / only p
 
 /****** IMPORTS ******/
 import './geogrid.scss'
-import {defaultOptions, initCore} from './geogrid.core.js'
+import {defaultOptions, defaultOptionsSource, initCore} from './geogrid.core.js'
 import {Download} from './geogrid.download.js'
 import {RendererSVG} from './geogrid.rendererSVG.js'
 import {RendererWebGL} from './geogrid.rendererWebGL.js'
@@ -19,7 +19,7 @@ import {RendererWebGL} from './geogrid.rendererWebGL.js'
 /****** PURE FUNCTION ******/
 L.isea3hToGeoJSON = (options, callback) => {
   // set options
-  options = Object.assign({}, () => {}, defaultOptions, options)
+  options = Object.assign({}, defaultOptions, defaultOptionsSource, options)
   // init core
   initCore(options, d => {}, callback, false)
 }
@@ -76,13 +76,14 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayerPlugin = class ISEA3HLayerPlugin {
 
 /****** LAYER ******/
 if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
-  options: defaultOptions,
+  options: {...defaultOptions, ...defaultOptionsSource},
   initialize: function(options) {
     this._initialized = false
     this._map = null
 
     // init options I
     L.Util.setOptions(this, options)
+    this._initOptionsSources()
 
     // event listener for web worker
     const eventListener = d => {
@@ -105,7 +106,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
           for (let p of this._plugins) if (p.onClick !== undefined) p.onClick(ePlugin)
           break
         case 'resultFindNeighbors':
-          this._execPluginCallback(d.uid, d.neighbors === null ? null : d.neighbors.map(cell => eventForPlugin(cell)))
+          this._execPluginCallback(d.uid, d.neighbors === null ? null : d.neighbors.map(eventForPlugin))
           break
       }
     }
@@ -137,8 +138,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       lat: cell.lat,
       lon: cell.lon,
       cell: cell,
-      data: this._data.dataForId(cell.id),
-      ...(this.options.dataMap !== null ? {dataNotMapped: this._data.dataForIdNotMapped(cell.id)} : {}),
+      data: this.options.multipleSources ? this.options.sources.map((source, sourceN) => this._data.dataForId(sourceN, cell.id)) : this._data.dataForId(0, cell.id),
+      dataNotMapped: this.options.multipleSources ? this.options.sources.map((source, sourceN) => this._data.dataForIdNotMapped(sourceN, cell.id)) : this._data.dataForIdNotMapped(0, cell.id),
     }
   },
   onAdd: function(map) {
@@ -146,12 +147,10 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._map = map
     this._renderer.add(map)
     this._updateData()
-
     // plugins
     map.on('mousemove', this._onMouseMove, this)
     map.on('mouseout', this._onMouseOut, this)
     map.on('click', this._onClick, this)
-    
     // events
     map.on('viewreset', this._onReset, this)
     map.on('zoomend', this._onReset, this)
@@ -162,62 +161,91 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._progress.remove()
     this._renderer.remove(map)
     this._webWorker.terminate()
-
     // plugins
     map.off('mousemove', this._onMouseMove, this)
     map.off('mouseout', this._onMouseOut, this)
     map.off('click', this._onClick, this)
-    
     // events
     map.off('viewreset', this._onReset, this)
     map.off('zoomend', this._onReset, this)
     map.off('moveend', this._onReset, this)
-
+    // map
     this._map = null
   },
   update: function(options) {
-    let reinitialize = false
-    let updateData = false
-    let processData = false
-    let produceGeoJSON = false
+    let intensity = {}
     // messages
     const notYetImplemented = o => {
-      console.log(`[WARNING] update of "${o}" not yet implemented; will re-initialize`)
-      reinitialize = true
+      this._progress.log(`WARNING: update of "${o}" not yet implemented; will re-initialize`)
+      intensity.reinitialize = true
+    }
+    if (options.sources !== undefined) this._process.error('To update the sources, call "updateSources(sources)".  To replace the sources, call "replaceSources(sources)".')
+    // check options for sources
+    intensity = this._combineUpdateIntensities(intensity, this._determineUpdateSourceIntensity(options))
+    // check general options
+    if (options.silent !== undefined) notYetImplemented('silent')
+    if (options.debug !== undefined) notYetImplemented('debug')
+    if (options.cellContourColor !== undefined) intensity.produceGeoJSON = true
+    if (options.cellContourWidth !== undefined) intensity.produceGeoJSON = true
+    if (options.colorProgressBar !== undefined) notYetImplemented('colorProgressBar')
+    if (options.colorDebug !== undefined) notYetImplemented('colorDebug')
+    if (options.colorDebugEmphasized !== undefined) notYetImplemented('colorDebugEmphasized')
+    if (options.resolution !== undefined) notYetImplemented('resolution')
+    if (options.attribution !== undefined) notYetImplemented('attribution')
+    if (options.bboxViewPad !== undefined) notYetImplemented('bboxViewPad')
+    if (options.bboxDataPad !== undefined) notYetImplemented('bboxDataPad')
+    if (options.renderer !== undefined) notYetImplemented('renderer')
+    // execute
+    this._executeUpdate(intensity, options)
+  },
+  updateSources: function(sources) {
+    let intensity = {}
+    // check options for sources
+    for (const source of sources) intensity = this._combineUpdateIntensities(intensity, this._determineUpdateSourceIntensity(source))
+    // update the sources
+    for (let sourceN = 0; sourceN < sources.length; sourceN++) sources[sourceN] = {...this.options.sources[sourceN], ...sources[sourceN]}
+    // execute
+    this._executeUpdate(intensity, {sources})
+  },
+  replaceSources: function(sources) {
+    this._executeUpdate({reinitialize: true}, {sources})
+  },
+  _combineUpdateIntensities(intensity1, intensity2) {
+    for (const [k, v] of Object.entries(intensity2)) intensity1[k] = intensity1[k] || v
+    return intensity1
+  },
+  _determineUpdateSourceIntensity(o) {
+    const intensity = {}
+    // messages
+    const notYetImplemented = o => {
+      this._progress.log(`WARNING: update of "${o}" not yet implemented; will re-initialize`)
+      intensity.reinitialize = true
     }
     // check options
-    if (options.url != undefined) updateData = true
-    if (options.data != undefined) reinitialize = true
-    if (options.silent != undefined) notYetImplemented('silent')
-    if (options.debug != undefined) notYetImplemented('debug')
-    if (options.resolution != undefined) notYetImplemented('resolution')
-    if (options.parameters != undefined) updateData = true
-    if (options.cellColorKey != undefined) produceGeoJSON = true
-    if (options.cellColorMin != undefined) produceGeoJSON = true
-    if (options.cellColorMax != undefined) produceGeoJSON = true
-    if (options.cellColorScale != undefined) produceGeoJSON = true
-    if (options.cellColorNoData != undefined) produceGeoJSON = true
-    if (options.cellColorNoKey != undefined) produceGeoJSON = true
-    if (options.cellColorOpacity != undefined) produceGeoJSON = true
-    if (options.cellSizeKey != undefined) produceGeoJSON = true
-    if (options.cellSizeMin != undefined) produceGeoJSON = true
-    if (options.cellSizeMax != undefined) produceGeoJSON = true
-    if (options.cellSizeScale != undefined) produceGeoJSON = true
-    if (options.cellSizeNoData != undefined) produceGeoJSON = true
-    if (options.cellSizeNoKey != undefined) produceGeoJSON = true
-    if (options.cellContourColor != undefined) produceGeoJSON = true
-    if (options.cellContourWidth != undefined) produceGeoJSON = true
-    if (options.colorProgressBar != undefined) notYetImplemented('colorProgressBar')
-    if (options.colorDebug != undefined) notYetImplemented('colorDebug')
-    if (options.colorDebugEmphasized != undefined) notYetImplemented('colorDebugEmphasized')
-    if (options.dataKeys != undefined) notYetImplemented('dataKeys')
-    if (options.dataMap != undefined) produceGeoJSON = true
-    if (options.attribution != undefined) notYetImplemented('attribution')
-    if (options.bboxViewPad != undefined) notYetImplemented('bboxViewPad')
-    if (options.bboxDataPad != undefined) notYetImplemented('bboxDataPad')
-    if (options.renderer != undefined) notYetImplemented('renderer')
+    if (o.url !== undefined) intensity.updateData = true
+    if (o.data !== undefined) intensity.reinitialize = true
+    if (o.parameters !== undefined) intensity.updateData = true
+    if (o.tileZoom !== undefined) notYetImplemented('tileZoom')
+    if (o.cellColorKey !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorMin !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorMax !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorScale !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorNoData !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorNoKey !== undefined) intensity.produceGeoJSON = true
+    if (o.cellColorOpacity !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeKey !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeMin !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeMax !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeScale !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeNoData !== undefined) intensity.produceGeoJSON = true
+    if (o.cellSizeNoKey !== undefined) intensity.produceGeoJSON = true
+    if (o.dataKeys !== undefined) notYetImplemented('dataKeys')
+    if (o.dataMap !== undefined) intensity.produceGeoJSON = true
+    return intensity
+  },
+  _executeUpdate(intensity, options) {
     // re-initialize
-    if (reinitialize) {
+    if (intensity.reinitialize) {
       const map = this._map
       this.onRemove(this._map)
       this.initialize({
@@ -229,18 +257,19 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
     // copy options
     for (const k in options) this.options[k] = options[k]
+    this._initOptionsSources()
     // update data
-    if (updateData) {
+    if (intensity.updateData) {
       this._updateData()
       return
     }
     // process data
-    if (processData) {
+    if (intensity.processData) {
       this._processData()
       return
     }
     // produce GeoJSON
-    if (produceGeoJSON) {
+    if (intensity.produceGeoJSON) {
       this._data.produceGeoJSON()
       this._visualizeData()
       return
@@ -251,6 +280,18 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._plugins.push(plugin)
     if (plugin.onHover !== undefined) this._pluginsOnHover = true
     if (plugin.onClick !== undefined) this._pluginsOnClick = true
+  },
+  _initOptionsSources: function() {
+    this.options.multipleSources = !this.options.url && !this.options.data
+    if (this.options.multipleSources) {
+      if (this.options.sources === undefined || this.options.sources === null) this.options.sources = []
+      else {
+        this.options.sources = this.options.sources.map(source => ({
+          ...defaultOptionsSource,
+          ...source,
+        }))
+      }
+    } else this.options.sources = [this.options]
   },
   _uuidv4: function() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -281,19 +322,25 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   _updateData: function() {
     const t = this
     // proceed only if data is available
-    if (t.options.url === null && t.options.data === null) return
-    // download the data
+    if ((t.options.sources === null || t.options.sources.length == 0) && t.options.url === null && t.options.data === null) return
+    // prepare downloading the data
     t._progress.showProgress()
     t._progress.debugStep(t.options.url !== null ? 'download data' : 'update data', 2.5)
     t._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
     const resolution = t.options.resolution(t._map.getZoom())
-    if (t.options.url !== null) new Download(t.options, resolution, t._progress).load(t._bboxData, data => {
-      t.options.data = data
+    // download the data
+    let n = 0
+    const useData = (i, data) => {
+      n += 1
+      if (data !== undefined) t.options.sources[i].data = data
+      if (n == t.options.sources.length) t._processData()
+    }
+    for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null) new Download(this.options, source, sourceN, resolution, t._progress).load(t._bboxData, data => {
       t._resolutionData = resolution
-      t.fire('dataDownloaded', {data: t.options.data})
-      t._processData()
+      t.fire('dataDownloaded', {data: t.options.multipleSources ? t.options.sources : t.options.sources[0]})
+      useData(sourceN, data)
     })
-    else t._processData()
+    else useData(i)
   },
   _processData: function() {
     // process data in web worker

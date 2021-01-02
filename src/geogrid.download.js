@@ -9,27 +9,26 @@ const latLonToTileID = (lat, lon, zoom) => {
   return [x, y]
 }
 
-let instanceDownload = null
+let instanceDownload = {}
 
 /****** Download ******/
 export class Download {
-  constructor(options, resolution, progress) {
-    if (this._url == options.url &&
-      this._silent == options.silent &&
-      this._debug == options.debug &&
-      this._resolution == options.resolution &&
-      this._tileZoom == options.tileZoom &&
-      JSON.stringify(this._parameters) == JSON.stringify(options.parameters) &&
-      this._resolution == resolution) return instanceDownload
-    this._url = options.url
+  constructor(options, source, sourceN, resolution, progress) {
+    if (instanceDownload[sourceN] !== undefined &&
+      instanceDownload[sourceN]._url == source.url &&
+      instanceDownload[sourceN]._silent == options.silent &&
+      instanceDownload[sourceN]._debug == options.debug &&
+      instanceDownload[sourceN]._resolution == options.resolution &&
+      instanceDownload[sourceN]._tileZoom == source.tileZoom &&
+      JSON.stringify(instanceDownload[sourceN]._parameters) == JSON.stringify(source.parameters)) return instanceDownload[sourceN]
+    this._url = source.url
     this._silent = options.silent
     this._debug = options.debug
-    this._resolution = options.resolution
-    this._tileZoom = options.tileZoom
-    this._parameters = options.parameters
+    this._tileZoom = source.tileZoom
+    this._parameters = source.parameters
     this._resolution = resolution
     this._progress = progress
-    instanceDownload = this
+    instanceDownload[sourceN] = this
   }
   load(bbox, callback) {
     if (this._url.includes('{bbox}')) {

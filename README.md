@@ -107,16 +107,14 @@ isea3h.update({
 })
 ```
 
-The following options are available:
+The following options are available to describe the data sources and their handling:
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `url` | `String` | `null` | URL under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be used in the `url` by providing corresponding values in the option `parameters`.  The expected format of the returned data is described above. |
 | `data` | `Object` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
-| `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
-| `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
-| `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
 | `parameters` | `Object` | `{date: new Date().toLocaleDateString(), dateFrom: null}` | Additional parameters that can be used in the `url`. |
+| `tileZoom` | `Number` | `7` | Zoom to be used for the tiles in case of a tile URL.
 | `cellColorKey` | `String` | `value` | The colour to be used for a grid cell can be chosen in dependence of the property `cellColorKey` of the cell.  The colour is, accordingly, determined by computing the function `cellColorScale` with the property `cellColorKey` of the cell as argument.  If the option `cellColorKey` is `null`, the colour `cellColorNoKey` is used instead. |
 | `cellColorMin` | `Number` | `0` | Minimum value to be used in `cellColorScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
 | `cellColorMax` | `Number` | `null` | Maximum value to be used in `cellColorScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
@@ -130,13 +128,22 @@ The following options are available:
 | `cellSizeScale` | `Function` | `(min, max) => {return value => (value - min) / (max - min)}` | This option is used to determine the relative size to be used for a grid cell, when `cellSizeKey` is not `null`.  This option is either (1) a function that returns, for a the property `cellSizeKey` of the cell, the relative size that should be used for the grid cell; or (2) a function that returns for given `min` and `max` values a function as in (1). |
 | `cellSizeNoData` | `Number` | `0` | Relative size to be used for a grid cell, when no data is available for this particular cell. |
 | `cellSizeNoKey` | `Number` | `1` | Relative size to be used for a grid cell, when `cellSizeKey` is `null`. |
+| `dataKeys` | `Array` | `...` | List of data keys to be copied for each cell.  By default, this list is determined automatically, which presumes that all keys are present for the first cell provided. |
+| `dataMap`| `Function` | `d => d` | Determines the data used for the corresponding cell, based on the list item provided in the json data.  This can, e.g., be used for more complex scenarios where timeline data is provided for each cell. |
+
+In addition, the following general options are available:
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sources` | `List` | `null` | List of data sources, each of them exposing the options listed above. |
+| `silent` | `Boolean` | `true` | Enables silent mode.  When enabled, debug information is suppressed in the console. |
+| `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
 | `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
 | `cellContourWidth` | `Number` | `2` | Width of the contour of a cell. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
-| `dataKeys` | `Array` | `...` | List of data keys to be copied for each cell.  By default, this list is determined automatically, which presumes that all keys are present for the first cell provided. |
-| `dataMap`| `Function` | `d => d` | Determines the data used for the corresponding cell, based on the list item provided in the json data.  This can, e.g., be used for more complex scenarios where timeline data is provided for each cell. |
+| `resolution` | `Function` | `...` | A function which results, for a given zoom level of the map as input parameter, a resolution of the grid |
 | `attribution` | `String` | `'plugin &copy; <a href="http://www.geog.uni-heidelberg.de/gis">Heidelberg University</a> and <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>'` | Attribution to be shown. |
 | `bboxViewPad` | `Number` | `1.05` | Size of the bounding box for which data is rendered in the layer, when the view of the map has changed (moving the view, changing the zoom level, etc.) |
 | `bboxDataPad` | `Number` | `1.25` | Size of the bounding box for which data is requested using the `url`, when the view of the map has changed (moving the view, changing the zoom level, etc.) |

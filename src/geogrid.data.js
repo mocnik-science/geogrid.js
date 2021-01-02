@@ -23,20 +23,20 @@ export class Data {
   getGeoJSON() {
     return this._geoJSON
   }
-  _minDataValue(key) {
+  _minDataValue(sourceN, key) {
     let min = Infinity
-    for (const v of this._dataById.values()) {
+    for (const v of this._dataById[sourceN].values()) {
       if (v[key] === null) continue
-      const w = this._dataMap(v)[key]
+      const w = this._dataMap(sourceN, v)[key]
       if (w < min) min = w
     }
     return min
   }
-  _maxDataValue(key) {
+  _maxDataValue(sourceN, key) {
     let max = -Infinity
-    for (const v of this._dataById.values()) {
+    for (const v of this._dataById[sourceN].values()) {
       if (v[key] === null) continue
-      const w = this._dataMap(v)[key]
+      const w = this._dataMap(sourceN, v)[key]
       if (w > max) max = w
     }
     return max
@@ -44,15 +44,20 @@ export class Data {
   updateScales() {
     if (!this._dataById) return
     const t = this
-    const computeScale = (scale, min, max, key) => {
+    const computeScale = (sourceN, scale, min, max, key) => {
       if (key === null) return null
       if (scale.length != 2) return scale
-      const minComputed = (min != null) ? min : this._minDataValue(key)
-      const maxComputed = (max != null) ? max : this._maxDataValue(key)
+      const minComputed = (min != null) ? min : this._minDataValue(sourceN, key)
+      const maxComputed = (max != null) ? max : this._maxDataValue(sourceN, key)
       return scale(minComputed, maxComputed)
     }
-    this._cellColorScale = computeScale(this._options.cellColorScale, this._options.cellColorMin, this._options.cellColorMax, this._options.cellColorKey)
-    this._cellSizeScale = computeScale(this._options.cellSizeScale, this._options.cellSizeMin, this._options.cellSizeMax, this._options.cellSizeKey)
+    this._cellColorScale = {}
+    this._cellSizeScale = {}
+    // for (const sourceN of Object.keys(this._dataById)) {
+    for (const [sourceN, source] of this._options.sources.entries()) {
+      this._cellColorScale[sourceN] = computeScale(sourceN, source.cellColorScale, source.cellColorMin, source.cellColorMax, source.cellColorKey)
+      this._cellSizeScale[sourceN] = computeScale(sourceN, source.cellSizeScale, source.cellSizeMin, source.cellSizeMax, source.cellSizeKey)
+    }
   }
   getOverwriteColor() {
     return this._overwriteColor
@@ -94,35 +99,37 @@ export class Data {
   resetOverwriteContourWidth() {
     this._overwriteContourWidth = {}
   }
-  cellColor(id, properties) {
+  cellColor(sourceN, id, properties) {
+    const source = this._options.sources[sourceN]
     // return overwritten colour
     if (id in this._overwriteColor) return this._overwriteColor[id]
     // no key
-    if (this._options.cellColorKey === null) return this._options.cellColorNoKey
+    if (source.cellColorKey === null) return source.cellColorNoKey
     // compute value
-    const value = properties[this._options.cellColorKey]
+    const value = properties[source.cellColorKey]
     // return if empty value
-    if (value === null || value === undefined) return this._options.cellColorNoData
+    if (value === null || value === undefined) return source.cellColorNoData
     // return if no scale
-    if (this._cellColorScale === null) return this._options.cellColorNoKey
+    if (this._cellColorScale === null || this._cellColorScale[sourceN] === null) return source.cellColorNoKey
     // compute colour
-    return this._cellColorScale(value)
+    return this._cellColorScale[sourceN](value)
   }
-  cellSize(id, properties, geometry) {
+  cellSize(sourceN, id, properties, geometry) {
+    const source = this._options.sources[sourceN]
     let relativeSize
     // choose overwritten relative size
     if (id in this._overwriteSize) relativeSize = this._overwriteSize[id]
     // no key
-    else if (this._options.cellSizeKey === null) relativeSize = this._options.cellSizeNoKey
+    else if (source.cellSizeKey === null) relativeSize = source.cellSizeNoKey
     else {
       // compute value
-      const value = properties[this._options.cellSizeKey]
+      const value = properties[source.cellSizeKey]
       // empty value
-      if (value === null || value === undefined) relativeSize = this._options.cellSizeNoData
+      if (value === null || value === undefined) relativeSize = source.cellSizeNoData
       // no scale
-      else if (this._cellSizeScale === null) relativeSize = this._options.cellSizeNoKey
+      else if (this._cellSizeScale === null || this._cellSizeScale[sourceN] === null) relativeSize = source.cellSizeNoKey
       // compute relative size
-      else relativeSize = this._cellSizeScale(value)
+      else relativeSize = this._cellSizeScale[sourceN](value)
     }
     // if no resize needed, return geometry
     if (relativeSize == 1) return geometry
@@ -142,68 +149,88 @@ export class Data {
     // return default value
     return returnNullOnDefault ? null : this._options.cellContourWidth
   }
-  cacheData() {
-    if (this._options.data === null || this._options.data === true) return null
-    this._dataById = new Map()
-    const ds = this._options.data.data
-    const data = {
-      data: new Array(ds.length)
-    }
-    for (let i = 0; i < ds.length; i++) {
-      const d = ds[i]
-      this._dataById.set(d.id, d)
-      if (d.lat !== undefined) {
-        data.data[i] = {
-          id: d.id,
-          lat: d.lat,
-          lon: d.lon,
+  cacheData(progress) {
+    if (this._options.sources === null || this._options.sources.length === 0) return null
+    this._dataById = {}
+    const dataCells = {data: {}}
+    for (const [sourceN, source] of this._options.sources.entries()) {
+      if (dataCells.resolution !== undefined && dataCells.resolution !== source.data.resolution) progress.error('All sources must have the same resolution')
+      this._dataById[sourceN] = new Map()
+      const ds = source.data.data
+      for (let i = 0; i < ds.length; i++) {
+        const d = ds[i]
+        this._dataById[sourceN].set(d.id, d)
+        if (!(d.id in dataCells.data)) {
+          if (d.lat !== undefined) {
+            dataCells.data[d.id] = {
+              id: d.id,
+              lat: d.lat,
+              lon: d.lon,
+            }
+            if (d.isPentagon !== undefined) dataCells.data[d.id].isPentagon = d.isPentagon
+          } else dataCells.data[d.id] = d.id
         }
-        if (d.isPentagon !== undefined) data.data[i].isPentagon = d.isPentagon
-      } else data.data[i] = d.id
+      }
+      for (const k of Object.keys(source.data)) if (k != 'data') dataCells[k] = source.data[k]
+      source.data.data = true
     }
-    for (const k of Object.keys(this._options.data)) if (k != 'data') data[k] = this._options.data[k]
-    this._options.data = true
-    return data
+    dataCells.data = Object.values(dataCells.data)
+    return dataCells
   }
-  dataKeys() {
-    if (this._options.dataKeys !== null) return this._options.dataKeys
+  dataKeys(sourceN) {
+    if (this._options.sources == null) return []
+    const source = this._options.sources[sourceN]
+    if (source.dataKeys !== null) return source.dataKeys
     if (this._cells.length == 0) return []
-    return Object.keys(this._dataMap(this._dataById.get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
+    return Object.keys(this._dataMap(sourceN, this._dataById[sourceN].get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
   }
   produceGeoJSON() {
     // update scales
     this.updateScales()
-    // produce GeoJSON
-    const features = []
-    for (let c of this._cells) {
-      if (c.vertices !== undefined) features.push({
+    // preparation for producing GeoJSONs
+    const coordinatesForSources = (sources, vertices) => {
+      return [vertices]
+    }
+    const makeFeature = (coordinates, cell, properties) => {
+      return {
         type: 'Feature',
         geometry: {
           type: 'Polygon',
-          coordinates: [c.vertices],
+          coordinates: [coordinates],
         },
-        properties: {id: c.id, ...this.dataForId(c.id)},
-      })
+        properties: {
+          id: cell.id,
+          ...properties,
+        },
+      }
+    }
+    // produce GeoJSON
+    const features = []
+    for (let c of this._cells) {
+      if (c.vertices !== undefined) {
+        const coordinates = coordinatesForSources(this._options.sources, c.vertices)
+        for (const sourceN in coordinates) features.push(makeFeature(coordinates[sourceN], c, this.dataForId(sourceN, c.id)))
+      }
     }
     this._geoJSON = {
       type: 'FeatureCollection',
       features: features,
     }
   }
-  _dataMap(d) {
-    if (this._options.dataMap !== null) return this._options.dataMap(d)
+  _dataMap(sourceN, d) {
+    if (this._options.sources[sourceN].dataMap !== null) return this._options.sources[sourceN].dataMap(d)
     return d
   }
-  dataForId(id) {
-    const d = this._dataById.get(id)
+  dataForId(sourceN, id) {
+    const d = this._dataById[sourceN].get(id)
     if (d === undefined) return {}
-    const d2 = this._dataMap(d)
+    const d2 = this._dataMap(sourceN, d)
     const properties = {}
-    for (const k of this.dataKeys()) properties[k] = d2[k]
+    for (const k of this.dataKeys(sourceN)) properties[k] = d2[k]
     return properties
   }
-  dataForIdNotMapped(id) {
-    const d = this._dataById.get(id)
+  dataForIdNotMapped(sourceN, id) {
+    const d = this._dataById[sourceN].get(id)
     if (d === undefined) return {}
     return d
   }
