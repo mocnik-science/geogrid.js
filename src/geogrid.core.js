@@ -40,6 +40,7 @@ export const defaultOptions = {
   debug: false,
   cellContourColor: null,
   cellContourWidth: 2,
+  cellContourOpacity: 1,
   colorProgressBar: '#ff5151',
   colorDebug: '#1e90ff',
   colorDebugEmphasized: '#f00',

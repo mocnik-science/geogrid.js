@@ -195,7 +195,7 @@ export class Data {
     const coordinatesForSources = (vertices, centroid, splitN, splitDelta) => {
       const vs = vertices.concat([vertices[0]])
       if (splitN == 0 && splitDelta == 6) return vs
-      return [centroid].concat(vs.splice(splitN, splitDelta + 1)).concat([centroid])
+      return [centroid].concat(vs.splice(splitN, Math.min(splitDelta + 1, vertices.length - splitN + 1))).concat([centroid])
     }
     // preparations for producing GeoJSONs
     const centroidOf = vertices => {
@@ -207,21 +207,30 @@ export class Data {
       }
       return [x / vertices.length, y / vertices.length]
     }
-    const makeFeature = (coordinates, centroid, cell, sourceN, properties) => {
-      return {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [coordinates],
-        },
-        properties: {
-          id: cell.id,
-          _sourceN: sourceN,
-          _centroid: centroid,
-          ...properties,
-        },
-      }
-    }
+    const makeFeature = (coordinates, centroid, cell, sourceN, properties) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [coordinates],
+      },
+      properties: {
+        id: cell.id,
+        _sourceN: sourceN,
+        _centroid: centroid,
+        ...properties,
+      },
+    })
+    const makeFeatureBorder = (coordinates, cell) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [coordinates],
+      },
+      properties: {
+        id: cell.id,
+        _isCell: true,
+      },
+    })
     // produce GeoJSON
     const features = []
     for (let c of this._cells) {
@@ -233,6 +242,7 @@ export class Data {
           features.push(makeFeature(coordinates, centroid, c, sourceN, this.dataForId(sourceN, c.id)))
           splitN += splitDelta
         }
+        features.push(makeFeatureBorder(c.vertices.concat([c.vertices[0]]), c))
       }
     }
     this._geoJSON = {

@@ -48,29 +48,34 @@ export class RendererWebGL {
       prevOverwriteContourColor = JSON.stringify(this._data.getOverwriteContourColor())
       prevOverwriteContourWidth = JSON.stringify(this._data.getOverwriteContourWidth())
       // if new geoJSON, cleanup and initialize
-      if (geoJSON._webgl_initialized == null || needsRefresh) {
-        geoJSON._webgl_initialized = true
-        pixiGraphics.clear()
-        pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, 1)
-      }
-      // draw geoJSON features
+      if (geoJSON._webgl_initialized == null || needsRefresh) pixiGraphics.clear()
+      // draw geoJSON features (content)
       for (const feature of geoJSON.features) {
+        if (feature.properties._isCell) continue
         const notInitialized = feature._webgl_coordinates == null
         if (notInitialized) feature._webgl_coordinates = t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
         if (notInitialized || needsRefresh) {
-          // contour
-          const contourColor = t._data.cellContourColor(feature.properties.id, true)
-          const contourWidth = t._data.cellContourWidth(feature.properties.id, true)
-          const considerContour = contourColor !== null || contourWidth !== null
-          if (considerContour) pixiGraphics.lineStyle((contourWidth !== null ? contourWidth : t._options.cellContourWidth) / scale, contourColor !== null ? pixiColor(contourColor) : cellContourColor, 1)
-          // draw
           pixiGraphics.beginFill(pixiColor(t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties)), t._options.cellColorOpacity)
           pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
           pixiGraphics.endFill()
-          // contour
-          if (considerContour) pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, 1)
         }
       }
+      // if new geoJSON, cleanup and initialize
+      if (geoJSON._webgl_initialized == null || needsRefresh) pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, t._options.cellContourOpacity)
+      // draw geoJSON features (cells)
+      for (const feature of geoJSON.features) {
+        if (!feature.properties._isCell) continue
+        const notInitialized = feature._webgl_coordinates == null
+        if (notInitialized) feature._webgl_coordinates = feature.geometry.coordinates[0].map(c => project([c[1], c[0]]))
+        if (notInitialized || needsRefresh) {
+          const contourColor = t._data.cellContourColor(feature.properties.id, false)
+          const contourWidth = t._data.cellContourWidth(feature.properties.id, false)
+          if (contourColor !== null || contourWidth !== null) pixiGraphics.lineStyle((contourWidth !== null ? contourWidth : t._options.cellContourWidth) / scale, contourColor !== null ? pixiColor(contourColor) : cellContourColor, t._options.cellContourOpacity)
+          pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
+          if (contourColor !== null || contourWidth !== null) pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, t._options.cellContourOpacity)
+        }
+      }
+      geoJSON._webgl_initialized = true
       renderer.render(container)
       t._progress.debugFinished()
     }, pixiContainer).addTo(map)

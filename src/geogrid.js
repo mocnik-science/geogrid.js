@@ -364,8 +364,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
         const circle = L.circle([d.lat, d.lon], {
           color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
           fill: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
-          radius: 3}
-        ).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
+          radius: 3,
+        }).on('mouseover', e => console.debug(e.target._d)).addTo(t._map)
         circle._d = d
         t._centroids.push(circle)
       }

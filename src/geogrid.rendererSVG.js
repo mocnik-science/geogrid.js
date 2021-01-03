@@ -22,9 +22,10 @@ export class RendererSVG {
     this._visHexagons = this._g.selectAll('path')
       .data(geoJSON.features)
       .enter().append('path')
-        .attr('fill', feature => t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties))
-        .attr('stroke', feature => t._data.cellContourColor(feature.properties.id))
-        .attr('stroke-width', feature => t._data.cellContourWidth(feature.properties.id))
+        .attr('fill', feature => feature.properties._isCell ? 'none' : t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties))
+        .attr('stroke', feature => feature.properties._isCell ? t._data.cellContourColor(feature.properties.id) : null)
+        .attr('stroke-width', feature => feature.properties._isCell ? t._data.cellContourWidth(feature.properties.id) : null)
+        .attr('stroke-opacity', feature => feature.properties._isCell ? t._options.cellContourOpacity : null)
         .attr('opacity', this._options.cellColorOpacity)
     this._update(geoJSON)
   }
@@ -49,7 +50,7 @@ export class RendererSVG {
       geometry: {
         type: feature.geometry.type,
         coordinates: [
-          t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
+          feature.properties._isCell ? feature.geometry.coordinates[0] : t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
         ],
       },
       properties: feature.properties,
