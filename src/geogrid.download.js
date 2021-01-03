@@ -11,8 +11,6 @@ const latLonToTileID = (lat, lon, zoom) => {
   return [x, y]
 }
 
-let instanceDownload = null
-
 const cacheObjectJSONable = (options, source) => ({
   url: source.url,
   tileZoom: source.tileZoom,
@@ -25,15 +23,19 @@ const cacheObjectNonJSONableKeys = [
   'resolution',
 ]
 
+let instanceDownload = null
+
 /****** Download ******/
 export class Download {
   constructor(progress) {
-    if (instanceDownload != null) return instanceDownload
-    instanceDownload = this
-    this._progress = progress
-    this._cache = {}
-    this._cacheObjects = {}
-    this._cacheObjectsN = 0
+    if (instanceDownload === null) {
+      instanceDownload = this
+      this._progress = progress
+      this._cache = {}
+      this._cacheObjects = {}
+      this._cacheObjectsN = 0
+    }
+    return instanceDownload
   }
   __getOrSaveCacheObject(object) {
     for (const [n, v] of Object.entries(this._cacheObjects)) if (v == object) return n
@@ -51,7 +53,7 @@ export class Download {
   __cleanupCache(cJSON, sourceN) {
     let cleanupCacheObjectNs = []
     // remove sourceN from unused caches
-    for (const [k, v] of Object.entries(this._cache)) if (k != cJSON) {
+    for (const [k, v] of Object.entries(this._cache)) if (k != cJSON && v.sourceN == sourceN) {
       v._cachedFor.delete(sourceN)
       if (v._cachedFor.size == 0) cleanupCacheObjectNs = cleanupCacheObjectNs.concat(cacheObjectNonJSONableKeys.map(k2 => v[k2]))
       delete this._cache[k]
@@ -105,9 +107,9 @@ export class Download {
       for (let x = xMin; x <= xMax; x++) for (let y = yMin; y <= yMax; y++) xy.push([x, y])
       urls = xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y))
     }
-    this._download(options, cJSON, c, urls, callback)
+    this._download(options, cJSON, urls, callback)
   }
-  _download(options, cJSON, c, urls, callback) {
+  _download(options, cJSON, urls, callback) {
     const ds = {}
     // prepare the final data
     const useData = (url, data) => {
@@ -129,7 +131,7 @@ export class Download {
     for (const url of urls) {
       if (url in this._cache[cJSON]._cachedData) {
         if ((options.debug || !options.silent) && this._progress) this._progress.log(`cached: ${url}`)
-        useData(url, c._cachedData[url])
+        useData(url, this._cache[cJSON]._cachedData[url])
       } else if (url in this._cache[cJSON]._callbacksDownloading) this._cache[cJSON]._callbacksDownloading[url].push((url, data) => useData(url, data))
       else {
         this._cache[cJSON]._callbacksDownloading[url] = []
@@ -142,7 +144,10 @@ export class Download {
             cb(url, data)
           }
           delete this._cache[cJSON]._callbacksDownloading[url]
-        }).catch(e => useData(url, null))
+        }).catch(e => {
+          this._progress.error(e)
+          useData(url, null)
+        })
       }
     }
   }
