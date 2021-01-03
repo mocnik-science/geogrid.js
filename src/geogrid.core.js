@@ -57,6 +57,19 @@ export const defaultOptions = {
   pureResolution: 7,
 }
 
+export const initOptions = options => {
+  options.multipleSources = !options.url && !options.data
+  if (options.multipleSources) {
+    if (options.sources === undefined || options.sources === null) options.sources = []
+    else {
+      options.sources = options.sources.map(source => ({
+        ...defaultOptionsSource,
+        ...source,
+      }))
+    }
+  } else options.sources = [options]
+}
+
 export const initCore = (options, eventListener, callback, visual) => {
   // init options I
   if (options.debug) options.silent = false

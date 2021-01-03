@@ -11,7 +11,7 @@ if (!d3Loaded) console.log('[geogrid.js] D3.js needs to be loaded first / only p
 
 /****** IMPORTS ******/
 import './geogrid.scss'
-import {defaultOptions, defaultOptionsSource, initCore} from './geogrid.core.js'
+import {defaultOptions, defaultOptionsSource, initCore, initOptions} from './geogrid.core.js'
 import {Download} from './geogrid.download.js'
 import {RendererSVG} from './geogrid.rendererSVG.js'
 import {RendererWebGL} from './geogrid.rendererWebGL.js'
@@ -20,6 +20,7 @@ import {RendererWebGL} from './geogrid.rendererWebGL.js'
 L.isea3hToGeoJSON = (options, callback) => {
   // set options
   options = Object.assign({}, defaultOptions, defaultOptionsSource, options)
+  initOptions(options)
   // init core
   initCore(options, d => {}, callback, false)
 }
@@ -83,7 +84,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
 
     // init options I
     L.Util.setOptions(this, options)
-    this._initOptionsSources()
+    initOptions(this.options)
 
     // event listener for web worker
     const eventListener = d => {
@@ -257,7 +258,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     }
     // copy options
     for (const k in options) this.options[k] = options[k]
-    this._initOptionsSources()
+    initOptions(this.options)
     // update data
     if (intensity.updateData) {
       this._updateData()
@@ -280,18 +281,6 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._plugins.push(plugin)
     if (plugin.onHover !== undefined) this._pluginsOnHover = true
     if (plugin.onClick !== undefined) this._pluginsOnClick = true
-  },
-  _initOptionsSources: function() {
-    this.options.multipleSources = !this.options.url && !this.options.data
-    if (this.options.multipleSources) {
-      if (this.options.sources === undefined || this.options.sources === null) this.options.sources = []
-      else {
-        this.options.sources = this.options.sources.map(source => ({
-          ...defaultOptionsSource,
-          ...source,
-        }))
-      }
-    } else this.options.sources = [this.options]
   },
   _uuidv4: function() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
