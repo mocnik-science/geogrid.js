@@ -353,6 +353,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
   },
   _visualizeData: function() {
     const t = this
+    if (!t._map) return
     // visualize centroids
     if (t._centroids != null) for (let c of t._centroids) c.remove()
     t._centroids = []
