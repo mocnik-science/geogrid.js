@@ -156,6 +156,7 @@ export class Data {
     for (const [sourceN, source] of this._options.sources.entries()) {
       if (dataCells.resolution !== undefined && dataCells.resolution !== source.data.resolution) progress.error('All sources must have the same resolution')
       this._dataById[sourceN] = new Map()
+      if (!source || !source.data || !source.data.data) continue
       const ds = source.data.data
       for (let i = 0; i < ds.length; i++) {
         const d = ds[i]
@@ -181,8 +182,10 @@ export class Data {
     if (this._options.sources == null) return []
     const source = this._options.sources[sourceN]
     if (source.dataKeys !== null) return source.dataKeys
-    if (this._cells.length == 0) return []
-    return Object.keys(this._dataMap(sourceN, this._dataById[sourceN].get(this._cells[0].id))).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
+    if (this._dataById[sourceN] === undefined || this._dataById[sourceN] === null) return []
+    const d = this._dataById[sourceN].values().next().value
+    if (d === undefined) return []
+    return Object.keys(d).filter(k => !['lat', 'lon', 'isPentagon'].includes(k))
   }
   produceGeoJSON() {
     // update scales
@@ -226,7 +229,7 @@ export class Data {
     if (d === undefined) return {}
     const d2 = this._dataMap(sourceN, d)
     const properties = {}
-    for (const k of this.dataKeys(sourceN)) properties[k] = d2[k]
+    if (this.dataKeys(sourceN)) for (const k of this.dataKeys(sourceN)) properties[k] = d2[k]
     return properties
   }
   dataForIdNotMapped(sourceN, id) {

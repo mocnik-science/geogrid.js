@@ -129,7 +129,8 @@ The following options are available to describe the data sources and their handl
 | `cellSizeNoData` | `Number` | `0` | Relative size to be used for a grid cell, when no data is available for this particular cell. |
 | `cellSizeNoKey` | `Number` | `1` | Relative size to be used for a grid cell, when `cellSizeKey` is `null`. |
 | `dataKeys` | `Array` | `...` | List of data keys to be copied for each cell.  By default, this list is determined automatically, which presumes that all keys are present for the first cell provided. |
-| `dataMap`| `Function` | `d => d` | Determines the data used for the corresponding cell, based on the list item provided in the json data.  This can, e.g., be used for more complex scenarios where timeline data is provided for each cell. |
+| `dataMap` | `Function` | `d => d` | Determines the data used for the corresponding cell, based on the list item provided in the json data.  This can, e.g., be used for more complex scenarios where timeline data is provided for each cell. |
+| `dataTransform` | `Function` | `data => data` | Is used to transform the entire dataset provided or downloaded, e.g., for aggregating data into cells.  In contrast to `dataMap`, which only affects the data of one cell, `dataTransform` affects the entire dataset. |
 
 In addition, the following general options are available:
 

@@ -319,17 +319,20 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     const resolution = t.options.resolution(t._map.getZoom())
     // download the data
     let n = 0
-    const useData = (i, data) => {
-      n += 1
-      if (data !== undefined) t.options.sources[i].data = data
+    const useData = (source, data) => {
+      n++
+      if (data !== undefined) {
+        if (source.dataTransform) data = source.dataTransform(data)
+        source.data = data
+      }
       if (n == t.options.sources.length) t._processData()
     }
     for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null) new Download(this.options, source, sourceN, resolution, t._progress).load(t._bboxData, data => {
       t._resolutionData = resolution
       t.fire('dataDownloaded', {data: t.options.multipleSources ? t.options.sources : t.options.sources[0]})
-      useData(sourceN, data)
+      useData(source, data)
     })
-    else useData(i)
+    else useData(source)
   },
   _processData: function() {
     // process data in web worker

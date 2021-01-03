@@ -63,7 +63,11 @@ export class Download {
         if (result === null) result = {...d}
         else result.data = result.data.concat(d.data)
       }
-      callback(result)
+      try {
+        callback(result)
+      } catch (e) {
+        console.error(e)
+      }
     }
     // start downloads
     for (const url of urls) {
