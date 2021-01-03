@@ -135,6 +135,8 @@ export class Data {
     }
     // if no resize needed, return geometry
     if (relativeSize == 1) return geometry
+    // if relative size vanishes, return null
+    if (relativeSize == 0) return null
     // resize geometry
     const centroid = properties._centroid
     return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])

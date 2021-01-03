@@ -66,16 +66,21 @@ export class RendererSVG {
         type: 'Point',
         coordinates: feature.properties._centroid,
       })
-      else return path({
-        type: feature.type,
-        geometry: {
-          type: feature.geometry.type,
-          coordinates: [
-            feature.properties._isCell ? feature.geometry.coordinates[0] : t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
-          ],
-        },
-        properties: feature.properties,
-      })
+      else {
+        let coordinates = feature.properties._isCell ? feature.geometry.coordinates[0] : t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0])
+        if (coordinates === null) return path({
+          "type": "FeatureCollection",
+          "features": []
+        })
+        else return path({
+          type: feature.type,
+          geometry: {
+            type: feature.geometry.type,
+            coordinates: [coordinates],
+          },
+          properties: feature.properties,
+        })
+      }
     })
     this._progress.debugFinished()
   }
