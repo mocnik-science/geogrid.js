@@ -19,9 +19,13 @@ export class RendererSVG {
     this._progress.debugStep('visualize (SVG)', 80)
     const t = this
     this._g.selectAll('path').remove()
+    for (const feature of geoJSON.features) {
+      feature._overwritten = t._data.cellContourColor(feature.properties.id, true) !== null || t._data.cellContourWidth(feature.properties.id, true) !== null
+    }
     this._visHexagons = this._g.selectAll('path')
       .data(geoJSON.features)
       .enter().append('path')
+        .sort((f1, f2) => d3.ascending(f1._overwritten, f2._overwritten))
         .attr('fill', feature => feature.properties._isCell ? 'none' : t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties))
         .attr('stroke', feature => feature.properties._isCell ? t._data.cellContourColor(feature.properties.id) : null)
         .attr('stroke-width', feature => feature.properties._isCell ? t._data.cellContourWidth(feature.properties.id) : null)
