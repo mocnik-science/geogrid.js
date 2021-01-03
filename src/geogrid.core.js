@@ -68,7 +68,7 @@ export const initOptions = options => {
       }))
     }
   } else options.sources = [options]
-  for (const source of options.sources) if (source.data !== undefined && source.dataTransform !== undefined) source.data = source.dataTransform(source.data)
+  for (const source of options.sources) if (source.data !== undefined && source.data !== null && source.dataTransform !== undefined && source.dataTransform !== null) source.data = source.dataTransform(source.data)
 }
 
 export const initCore = (options, eventListener, callback, visual) => {

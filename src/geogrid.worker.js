@@ -61,7 +61,7 @@ onmessage = e => {
 }
 
 // config
-const cacheSize = 2
+const cacheSize = 2.5
 
 // constants
 const rad = Math.PI / 180
