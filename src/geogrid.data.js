@@ -220,7 +220,7 @@ export class Data {
         ...properties,
       },
     })
-    const makeFeatureBorder = (coordinates, cell) => ({
+    const makeFeatureBorder = (coordinates, centroid, cell) => ({
       type: 'Feature',
       geometry: {
         type: 'Polygon',
@@ -229,6 +229,7 @@ export class Data {
       properties: {
         id: cell.id,
         _isCell: true,
+        _centroid: centroid,
       },
     })
     // produce GeoJSON
@@ -242,7 +243,7 @@ export class Data {
           features.push(makeFeature(coordinates, centroid, c, sourceN, this.dataForId(sourceN, c.id)))
           splitN += splitDelta
         }
-        features.push(makeFeatureBorder(c.vertices.concat([c.vertices[0]]), c))
+        features.push(makeFeatureBorder(c.vertices.concat([c.vertices[0]]), centroid, c))
       }
     }
     this._geoJSON = {

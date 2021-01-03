@@ -60,10 +60,21 @@ export class RendererWebGL {
           pixiGraphics.endFill()
         }
       }
-      // if new geoJSON, cleanup and initialize
-      if (geoJSON._webgl_initialized == null || needsRefresh) pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, t._options.cellContourOpacity)
-      // draw geoJSON features (cells)
+      // draw geoJSON features (cell contours)
+      if (t._options.cellCentroidColor !== null && t._options.cellCentroidRadius !== null && t._options.cellCentroidRadius > 0 && t._options.cellCentroidOpacity !== null && t._options.cellCentroidOpacity > 0) {
+        pixiGraphics.lineStyle(0, 0x0, 1)
+        pixiGraphics.beginFill(pixiColor(t._options.cellCentroidColor), t._options.cellCentroidOpacity)
+        for (const feature of geoJSON.features) {
+          if (!feature.properties._isCell) continue
+          const notInitialized = feature._webgl_centroid == null
+          if (notInitialized) feature._webgl_centroid = project([feature.properties._centroid[1], feature.properties._centroid[0]])
+          if (notInitialized || needsRefresh) pixiGraphics.drawCircle(feature._webgl_centroid.x, feature._webgl_centroid.y, t._options.cellCentroidRadius / scale)
+        }
+        pixiGraphics.endFill()
+      }
+      // draw geoJSON features (cell contours)
       const overwrittenFeatures = []
+      pixiGraphics.lineStyle(t._options.cellContourWidth / scale, cellContourColor, t._options.cellContourOpacity)
       for (const feature of geoJSON.features) {
         if (!feature.properties._isCell) continue
         const notInitialized = feature._webgl_coordinates == null
@@ -75,7 +86,7 @@ export class RendererWebGL {
           else pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
         }
       }
-      // draw geoJSON features (overwritten cells)
+      // draw geoJSON features (overwritten cell contours)
       for (const feature of overwrittenFeatures) {
         const contourColor = t._data.cellContourColor(feature.properties.id, true)
         const contourWidth = t._data.cellContourWidth(feature.properties.id, true)
