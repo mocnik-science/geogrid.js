@@ -155,11 +155,17 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     map.on('zoomend', this._onReset, this)
     map.on('moveend', this._onReset, this)
   },
+  hideFrom: function(map) {
+    this._hideOnly = true
+    map.removeLayer(this)
+    this._hideOnly = false
+    return this
+  },
   onRemove: function(map) {
     if (!map) return
     this._progress.remove()
     this._renderer.remove(map)
-    this._webWorker.terminate()
+    if (!this._hideOnly) this._webWorker.terminate()
     // plugins
     map.off('mousemove', this._onMouseMove, this)
     map.off('mouseout', this._onMouseOut, this)
