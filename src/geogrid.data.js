@@ -134,7 +134,7 @@ export class Data {
     // if no resize needed, return geometry
     if (relativeSize == 1) return geometry
     // resize geometry
-    const centroid = geometry.reduce(([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]).map(c => c / geometry.length)
+    const centroid = properties._centroid
     return geometry.map(([x, y]) => [relativeSize * (x - centroid[0]) + centroid[0], relativeSize * (y - centroid[1]) + centroid[1]])
   }
   cellContourColor(id, returnNullOnDefault=false) {
@@ -154,9 +154,9 @@ export class Data {
     this._dataById = {}
     const dataCells = {data: {}}
     for (const [sourceN, source] of this._options.sources.entries()) {
-      if (dataCells.resolution !== undefined && dataCells.resolution !== source.data.resolution) progress.error('All sources must have the same resolution')
       this._dataById[sourceN] = new Map()
       if (!source || !source.data || !source.data.data) continue
+      if (dataCells.resolution !== undefined && dataCells.resolution !== source.data.resolution) progress.error('All sources must have the same resolution')
       const ds = source.data.data
       for (let i = 0; i < ds.length; i++) {
         const d = ds[i]
@@ -190,11 +190,24 @@ export class Data {
   produceGeoJSON() {
     // update scales
     this.updateScales()
-    // preparation for producing GeoJSONs
-    const coordinatesForSources = (sources, vertices) => {
-      return [vertices]
+    // preparations for computing how the hexagon shall be split
+    const split = this._options.splitHexagon(this._options.sources.filter(s => !s.hide))
+    const coordinatesForSources = (vertices, centroid, splitN, splitDelta) => {
+      const vs = vertices.concat([vertices[0]])
+      if (splitN == 0 && splitDelta == 6) return vs
+      return [centroid].concat(vs.splice(splitN, splitDelta + 1)).concat([centroid])
     }
-    const makeFeature = (coordinates, cell, properties) => {
+    // preparations for producing GeoJSONs
+    const centroidOf = vertices => {
+      let x = 0
+      let y = 0
+      for (let i = vertices.length; i--;) {
+        x += vertices[i][0]
+        y += vertices[i][1]
+      }
+      return [x / vertices.length, y / vertices.length]
+    }
+    const makeFeature = (coordinates, centroid, cell, sourceN, properties) => {
       return {
         type: 'Feature',
         geometry: {
@@ -203,6 +216,8 @@ export class Data {
         },
         properties: {
           id: cell.id,
+          _sourceN: sourceN,
+          _centroid: centroid,
           ...properties,
         },
       }
@@ -211,8 +226,13 @@ export class Data {
     const features = []
     for (let c of this._cells) {
       if (c.vertices !== undefined) {
-        const coordinates = coordinatesForSources(this._options.sources, c.vertices)
-        for (const sourceN in coordinates) features.push(makeFeature(coordinates[sourceN], c, this.dataForId(sourceN, c.id)))
+        const centroid = centroidOf(c.vertices)
+        let splitN = 0
+        for (const [sourceN, splitDelta] of split) {
+          const coordinates = coordinatesForSources(c.vertices, centroid, splitN, splitDelta)
+          features.push(makeFeature(coordinates, centroid, c, sourceN, this.dataForId(sourceN, c.id)))
+          splitN += splitDelta
+        }
       }
     }
     this._geoJSON = {

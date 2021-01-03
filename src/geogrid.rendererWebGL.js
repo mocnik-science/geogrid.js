@@ -56,7 +56,7 @@ export class RendererWebGL {
       // draw geoJSON features
       for (const feature of geoJSON.features) {
         const notInitialized = feature._webgl_coordinates == null
-        if (notInitialized) feature._webgl_coordinates = t._data.cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
+        if (notInitialized) feature._webgl_coordinates = t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]).map(c => project([c[1], c[0]]))
         if (notInitialized || needsRefresh) {
           // contour
           const contourColor = t._data.cellContourColor(feature.properties.id, true)
@@ -64,7 +64,7 @@ export class RendererWebGL {
           const considerContour = contourColor !== null || contourWidth !== null
           if (considerContour) pixiGraphics.lineStyle((contourWidth !== null ? contourWidth : t._options.cellContourWidth) / scale, contourColor !== null ? pixiColor(contourColor) : cellContourColor, 1)
           // draw
-          pixiGraphics.beginFill(pixiColor(t._data.cellColor(feature.properties.id, feature.properties)), t._options.cellColorOpacity)
+          pixiGraphics.beginFill(pixiColor(t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties)), t._options.cellColorOpacity)
           pixiGraphics.drawPolygon([].concat(...feature._webgl_coordinates.map(c => [c.x, c.y])))
           pixiGraphics.endFill()
           // contour

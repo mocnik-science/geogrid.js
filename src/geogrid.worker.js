@@ -209,7 +209,7 @@ const computeGeoJSON = (json, bbox) => {
     c.angles.sort((a, b) => (a.angle < b.angle) ? -1 : 1)
     // compute vertices
     c.vertices = []
-    for (let i = 0; i <= c.angles.length; i++) {
+    for (let i = 0; i < c.angles.length; i++) {
       const n1 = c.angles[i % c.angles.length]
       const n2 = c.angles[(i + 1) % c.angles.length]
       c.vertices.push([(n1.lon + n2.lon + c.lon) / 3, (n1.lat + n2.lat + c.lat) / 3])

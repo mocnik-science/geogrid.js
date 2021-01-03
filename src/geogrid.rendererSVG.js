@@ -22,13 +22,13 @@ export class RendererSVG {
     this._visHexagons = this._g.selectAll('path')
       .data(geoJSON.features)
       .enter().append('path')
-        .attr('fill', feature => t._data.cellColor(feature.properties.id, feature.properties))
+        .attr('fill', feature => t._data.cellColor(feature.properties._sourceN, feature.properties.id, feature.properties))
         .attr('stroke', feature => t._data.cellContourColor(feature.properties.id))
         .attr('stroke-width', feature => t._data.cellContourWidth(feature.properties.id))
         .attr('opacity', this._options.cellColorOpacity)
-    this.update(geoJSON)
+    this._update(geoJSON)
   }
-  update(geoJSON) {
+  _update(geoJSON) {
     this._progress.debugStep('visualize - update (SVG))', 90)
     const t = this
     const projectPoint = function(x, y) {
@@ -49,7 +49,7 @@ export class RendererSVG {
       geometry: {
         type: feature.geometry.type,
         coordinates: [
-          t._data.cellSize(feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
+          t._data.cellSize(feature.properties._sourceN, feature.properties.id, feature.properties, feature.geometry.coordinates[0]),
         ],
       },
       properties: feature.properties,

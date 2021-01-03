@@ -230,6 +230,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (o.url !== undefined) intensity.updateData = true
     if (o.data !== undefined) intensity.reinitialize = true
     if (o.parameters !== undefined) intensity.updateData = true
+    if (o.hide !== undefined) intensity.produceGeoJSON = true
     if (o.tileZoom !== undefined) notYetImplemented('tileZoom')
     if (o.cellColorKey !== undefined) intensity.produceGeoJSON = true
     if (o.cellColorMin !== undefined) intensity.produceGeoJSON = true

@@ -14,6 +14,7 @@ export const defaultOptionsSource = {
     date: new Date().toLocaleDateString(),
     dateFrom: null,
   },
+  hide: false,
   tileZoom: 7,
   cellColorKey: 'value',
   cellColorMin: 0,
@@ -52,6 +53,14 @@ export const defaultOptions = {
   attribution: 'plugin &copy; <a href="http://www.mocnik-science.net">Franz-Benjamin Mocnik</a>',
   bboxViewPad: 1.05,
   bboxDataPad: 1.25,
+  splitHexagon: visibleSources => {
+    let d = 1
+    if (visibleSources.length == 0) return []
+    if (visibleSources.length <= 3) d = 6 / visibleSources.length
+    const split = []
+    for (let i = 0; i < Math.min(visibleSources.length, 6); i++) split.push([i, d])
+    return split
+  },
   renderer: 'webgl',
   pureBBox: null,
   pureResolution: 7,
