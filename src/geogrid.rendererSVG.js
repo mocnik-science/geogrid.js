@@ -2,10 +2,11 @@
 
 /****** RENDERER SVG ******/
 export class RendererSVG {
-  constructor(options, progress, data) {
+  constructor(options, progress, data, getGeoJSON) {
     this._options = options
     this._progress = progress
     this._data = data
+    this._getGeoJSON = getGeoJSON
   }
   add(map) {
     this._map = map
@@ -15,9 +16,10 @@ export class RendererSVG {
   remove(map) {
     this._svg.remove()
   }
-  render(geoJSON) {
-    this._progress.debugStep('visualize (SVG)', 80)
+  render() {
     const t = this
+    const geoJSON = t._getGeoJSON()
+    this._progress.debugStep('visualize (SVG)', 75)
     this._g.selectAll('path').remove()
     const drawCentroids = t._options.cellCentroidColor !== null && t._options.cellCentroidRadius !== null && t._options.cellCentroidRadius > 0 && t._options.cellCentroidOpacity !== null && t._options.cellCentroidOpacity > 0
     const features = geoJSON.features.flatMap(feature => {

@@ -125,11 +125,11 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     this._hoveredCells = []
 
     // choose renderer
-    if (this.options.renderer.toLowerCase() == 'svg') this._renderer = new RendererSVG(this.options, this._progress, this._data)
+    if (this.options.renderer.toLowerCase() == 'svg') this._renderer = new RendererSVG(this.options, this._progress, this._data, () => this._getGeoJSONReduced())
     else {
       if (typeof PIXI === 'undefined') this._progress.error('pixi.js needs to be loaded first')
       if (typeof L.pixiOverlay === 'undefined') this._progress.error('Leaflet.PixiOverlay needs to be loaded first')
-      this._renderer = new RendererWebGL(this.options, this._progress, this._data)
+      this._renderer = new RendererWebGL(this.options, this._progress, this._data, () => this._data.getGeoJSON())
     }
 
     // event for plugin
@@ -190,8 +190,12 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     // check general options
     if (options.silent !== undefined) notYetImplemented('silent')
     if (options.debug !== undefined) notYetImplemented('debug')
-    if (options.cellContourColor !== undefined) intensity.produceGeoJSON = true
-    if (options.cellContourWidth !== undefined) intensity.produceGeoJSON = true
+    if (options.cellContourColor !== undefined) intensity.visualize = true
+    if (options.cellContourWidth !== undefined) intensity.visualize = true
+    if (options.cellContourOpacity !== undefined) intensity.visualize = true
+    if (options.cellCentroidColor !== undefined) intensity.visualize = true
+    if (options.cellCentroidRadius !== undefined) intensity.visualize = true
+    if (options.cellCentroidOpacity !== undefined) intensity.visualize = true
     if (options.colorProgressBar !== undefined) notYetImplemented('colorProgressBar')
     if (options.colorDebug !== undefined) notYetImplemented('colorDebug')
     if (options.colorDebugEmphasized !== undefined) notYetImplemented('colorDebugEmphasized')
@@ -232,20 +236,20 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (o.parameters !== undefined) intensity.updateData = true
     if (o.hide !== undefined) intensity.produceGeoJSON = true
     if (o.tileZoom !== undefined) notYetImplemented('tileZoom')
-    if (o.cellColorKey !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorMin !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorMax !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorScale !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorNoData !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorNoKey !== undefined) intensity.produceGeoJSON = true
-    if (o.cellColorOpacity !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeKey !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeMin !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeMax !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeScale !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeNoData !== undefined) intensity.produceGeoJSON = true
-    if (o.cellSizeNoKey !== undefined) intensity.produceGeoJSON = true
-    if (o.dataKeys !== undefined) notYetImplemented('dataKeys')
+    if (o.cellColorKey !== undefined) intensity.visualize = true
+    if (o.cellColorMin !== undefined) intensity.visualize = true
+    if (o.cellColorMax !== undefined) intensity.visualize = true
+    if (o.cellColorScale !== undefined) intensity.visualize = true
+    if (o.cellColorNoData !== undefined) intensity.visualize = true
+    if (o.cellColorNoKey !== undefined) intensity.visualize = true
+    if (o.cellColorOpacity !== undefined) intensity.visualize = true
+    if (o.cellSizeKey !== undefined) intensity.visualize = true
+    if (o.cellSizeMin !== undefined) intensity.visualize = true
+    if (o.cellSizeMax !== undefined) intensity.visualize = true
+    if (o.cellSizeScale !== undefined) intensity.visualize = true
+    if (o.cellSizeNoData !== undefined) intensity.visualize = true
+    if (o.cellSizeNoKey !== undefined) intensity.visualize = true
+    if (o.dataKeys !== undefined) intensity.produceGeoJSON = true
     if (o.dataMap !== undefined) intensity.produceGeoJSON = true
     return intensity
   },
@@ -266,17 +270,25 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     initOptions(this.options)
     // update data
     if (intensity.updateData) {
+      this._data.resetGeoJSON()
       this._updateData()
       return
     }
     // process data
     if (intensity.processData) {
+      this._data.resetGeoJSON()
       this._processData()
       return
     }
     // produce GeoJSON
     if (intensity.produceGeoJSON) {
+      this._data.resetGeoJSON()
       this._data.produceGeoJSON()
+      this._visualizeData()
+      return
+    }
+    // visualize
+    if (intensity.visualize) {
       this._visualizeData()
       return
     }
@@ -348,9 +360,9 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       east: this._bboxData.getEast(),
     })
   },
-  _reduceGeoJSON: function() {
-    this._progress.debugStep('reduce GeoJSON for area', 70)
-    return this._data.reduceGeoJSON(this._paddedBounds())
+  _getGeoJSONReduced: function() {
+    this._progress.debugStep('reduce GeoJSON for area', 80)
+    return this._data.getGeoJSONReduced(this._paddedBounds())
   },
   _visualizeData: function() {
     const t = this
@@ -359,7 +371,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (t._centroids != null) for (let c of t._centroids) c.remove()
     t._centroids = []
     if (t.options.debug) {
-      this._progress.debugStep('visualize centroids', 75)
+      this._progress.debugStep('visualize centroids', 70)
       for (let d of t._data.getCells()) {
         const circle = L.circle([d.lat, d.lon], {
           color: (d.isPentagon) ? t.options.colorDebugEmphasized : t.options.colorDebug,
@@ -410,13 +422,10 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     if (this._data.getGeoJSON() === null || this._data.getGeoJSON() === undefined) return
     // reset after zooming, panning, etc.
     if ((this._paddedBounds && !this._bboxData.contains(this._paddedBounds())) || (this.options.url && this.options.resolution(this._map.getZoom()) !== this._resolutionData)) this._updateData()
-    else {
-      const geoJSONreduced = this._reduceGeoJSON()
-      if (geoJSONreduced && geoJSONreduced.features.length) this._renderer.render(geoJSONreduced)
-    }
+    else this._render()
   },
   _render: function() {
-    this._renderer.render(this._reduceGeoJSON())
+    this._renderer.render()
   },
 })
 

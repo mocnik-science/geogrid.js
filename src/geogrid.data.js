@@ -7,6 +7,7 @@ export class Data {
     this._dataById = null
     this._cells = []
     this._geoJSON = null
+    this._geoJSONReduced = null
     
     // init plugins
     this._overwriteColor = {}
@@ -14,14 +15,15 @@ export class Data {
     this._overwriteContourColor = {}
     this._overwriteContourWidth = {}
   }
+  resetGeoJSON() {
+    this._geoJSON = null
+    this._geoJSONReduced = null
+  }
   getCells() {
     return this._cells
   }
   setCells(cells) {
     this._cells = cells
-  }
-  getGeoJSON() {
-    return this._geoJSON
   }
   _minDataValue(sourceN, key) {
     let min = Infinity
@@ -268,18 +270,21 @@ export class Data {
     if (d === undefined) return {}
     return d
   }
-  reduceGeoJSON(b) {
+  getGeoJSON() {
+    return this._geoJSON
+  }
+  getGeoJSONReduced(b) {
     if (!this._geoJSON) return
     // return cached GeoJSON in case of unchanged bounds
-    if (b.equals(this._bboxView)) return this._geoJSONreduced
+    if (this._geoJSONReduced !== null && b.equals(this._bboxView)) return this._geoJSONReduced
     this._bboxView = b
     // reduce
-    this._geoJSONreduced = {
+    this._geoJSONReduced = {
       type: 'FeatureCollection',
       features: [],
     }
-    for (let f of this._geoJSON.features) if (b.intersects(L.latLngBounds(f.geometry.coordinates[0].map(c => [c[1], c[0]])))) this._geoJSONreduced.features.push(f)
+    for (let f of this._geoJSON.features) if (b.intersects(L.latLngBounds(f.geometry.coordinates[0].map(c => [c[1], c[0]])))) this._geoJSONReduced.features.push(f)
     // return
-    return this._geoJSONreduced
+    return this._geoJSONReduced
   }
 }

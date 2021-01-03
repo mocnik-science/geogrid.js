@@ -2,10 +2,11 @@
 
 /****** RENDERER WEBGL ******/
 export class RendererWebGL {
-  constructor(options, progress, data) {
+  constructor(options, progress, data, getGeoJSON) {
     this._options = options
     this._progress = progress
     this._data = data
+    this._getGeoJSON = getGeoJSON
   }
   add(map) {
     const t = this
@@ -16,13 +17,14 @@ export class RendererWebGL {
     const pixiContainer = new PIXI.Container()
     const pixiGraphics = new PIXI.Graphics()
     pixiContainer.addChild(pixiGraphics)
-    let prevZoom
+    let prevZoom = null
     let prevOverwriteColor = null
     let prevOverwriteSize = null
     let prevOverwriteContourColor = null
     let prevOverwriteContourWidth = null
+    let prevOptions = null
     this._webgl = L.pixiOverlay(utils => {
-      const geoJSON = t._data.getGeoJSON()
+      const geoJSON = t._getGeoJSON()
       // if no geoJSON present, do nothing
       if (geoJSON == null || geoJSON.features == null) return
       // log
@@ -41,12 +43,20 @@ export class RendererWebGL {
         prevOverwriteColor != JSON.stringify(this._data.getOverwriteColor()) ||
         prevOverwriteSize != JSON.stringify(this._data.getOverwriteSize()) ||
         prevOverwriteContourColor != JSON.stringify(this._data.getOverwriteContourColor()) ||
-        prevOverwriteContourWidth != JSON.stringify(this._data.getOverwriteContourWidth())
+        prevOverwriteContourWidth != JSON.stringify(this._data.getOverwriteContourWidth()) ||
+        prevOptions === null ||
+        [
+          'cellContourColor', 'cellContourWidth', 'cellContourOpacity',
+          'cellCentroidColor', 'cellCentroidRadius', 'cellCentroidOpacity',
+          'cellColorKey', 'cellColorMin', 'cellColorMax', 'cellColorScale', 'cellColorNoData', 'cellColorNoKey', 'cellColorOpacity',
+          'cellSizeKey', 'cellSizeMin', 'cellSizeMax', 'cellSizeScale', 'cellSizeNoData', 'cellSizeNoKey',
+        ].some(k => prevOptions[k] != t._options[k])
       prevZoom = zoom
       prevOverwriteColor = JSON.stringify(this._data.getOverwriteColor())
       prevOverwriteSize = JSON.stringify(this._data.getOverwriteSize())
       prevOverwriteContourColor = JSON.stringify(this._data.getOverwriteContourColor())
       prevOverwriteContourWidth = JSON.stringify(this._data.getOverwriteContourWidth())
+      prevOptions = {...t._options}
       // if new geoJSON, cleanup and initialize
       if (geoJSON._webgl_initialized == null || needsRefresh) pixiGraphics.clear()
       // draw geoJSON features (content)
