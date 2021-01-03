@@ -1,5 +1,7 @@
 "use strict"
 
+const cacheSize = 2.5
+
 const radians = degrees => degrees * Math.PI / 180
 
 const latLonToTileID = (lat, lon, zoom) => {
@@ -9,51 +11,103 @@ const latLonToTileID = (lat, lon, zoom) => {
   return [x, y]
 }
 
-let instanceDownload = {}
+let instanceDownload = null
+
+const cacheObjectJSONable = (options, source) => ({
+  url: source.url,
+  tileZoom: source.tileZoom,
+  parameters: source.parameters,
+})
+const cacheObjectNonJSONable = (options, source) => ({
+  resolution: options.resolution,
+})
+const cacheObjectNonJSONableKeys = [
+  'resolution',
+]
 
 /****** Download ******/
 export class Download {
-  constructor(options, source, sourceN, resolution, progress) {
-    if (instanceDownload[sourceN] !== undefined &&
-      instanceDownload[sourceN]._url == source.url &&
-      instanceDownload[sourceN]._silent == options.silent &&
-      instanceDownload[sourceN]._debug == options.debug &&
-      instanceDownload[sourceN]._resolution == options.resolution &&
-      instanceDownload[sourceN]._tileZoom == source.tileZoom &&
-      JSON.stringify(instanceDownload[sourceN]._parameters) == JSON.stringify(source.parameters)) return instanceDownload[sourceN]
-    this._url = source.url
-    this._silent = options.silent
-    this._debug = options.debug
-    this._tileZoom = source.tileZoom
-    this._parameters = source.parameters
-    this._resolution = resolution
+  constructor(progress) {
+    if (instanceDownload != null) return instanceDownload
+    instanceDownload = this
     this._progress = progress
-    instanceDownload[sourceN] = this
+    this._cache = {}
+    this._cacheObjects = {}
+    this._cacheObjectsN = 0
   }
-  load(bbox, callback) {
-    if (this._url.includes('{bbox}')) {
-      let url = this._url
-        .replace('{bbox}', bbox.toBBoxString())
-        .replace('{resolution}', this._resolution)
-      this.download([url], data => callback(data, bbox, resolution))
-    } else {
-      const url = this._url
-        .replace('{resolution}', this._resolution)
-        .replace('{z}', this._tileZoom)
-      const [xMin, yMin] = latLonToTileID(bbox.getNorth(), bbox.getWest(), this._tileZoom)
-      const [xMax, yMax] = latLonToTileID(bbox.getSouth(), bbox.getEast(), this._tileZoom)
+  __getOrSaveCacheObject(object) {
+    for (const [n, v] of Object.entries(this._cacheObjects)) if (v == object) return n
+    const n = this._cacheObjectsN.toString()
+    this._cacheObjects[n] = object
+    this._cacheObjectsN++
+    return n
+  }
+  __fetchCacheObject(n) {
+    return this._cacheObjects[n]
+  }
+  __removeCacheObject(n) {
+    delete this._cacheObjects[n]
+  }
+  __cleanupCache(cJSON, sourceN) {
+    let cleanupCacheObjectNs = []
+    // remove sourceN from unused caches
+    for (const [k, v] of Object.entries(this._cache)) if (k != cJSON) {
+      v._cachedFor.delete(sourceN)
+      if (v._cachedFor.size == 0) cleanupCacheObjectNs = cleanupCacheObjectNs.concat(cacheObjectNonJSONableKeys.map(k2 => v[k2]))
+      delete this._cache[k]
+    }
+    // delete unused caches and corresponding cache objects
+    const usedCacheObjectNs = Object
+      .values(this._cache)
+      .flatMap(v => cacheObjectNonJSONableKeys.map(k => v[k]))
+    for (const n of cleanupCacheObjectNs) if (!usedCacheObjectNs.includes(n)) this.__removeCacheObject(n)
+  }
+  _getCache(options, source, sourceN) {
+    // create default cache
+    const c = {
+      ...cacheObjectJSONable(options, source),
+    }
+    // save objects to cache
+    for (const [k, v] of Object.entries(cacheObjectNonJSONable(options, source))) c[k] = this.__getOrSaveCacheObject(v)
+    // compute key
+    const cJSON = JSON.stringify(c)
+    // store to cache if necessary
+    if (!(cJSON in this._cache)) this._cache[cJSON] = {
+      ...c,
+      _cachedFor: new Set(),
+      _cachedData: {},
+    }
+    // add sourceN to _cachedFor
+    this._cache[cJSON]._cachedFor.add(sourceN)
+    // produce result
+    const c2 = {...this._cache[cJSON]}
+    // fetch objects from cache
+    for (const k of cacheObjectNonJSONableKeys) c2[k] = this.__fetchCacheObject(c2[k])
+    // cleanup cache
+    this.__cleanupCache(cJSON, sourceN)
+    // return result
+    return [cJSON, c2]
+  }
+  load(options, source, sourceN, resolutionData, bbox, callback) {
+    // get cache
+    const [cJSON, c] = this._getCache(options, source, sourceN)
+    // produce urls
+    let urls
+    let url = c.url.replace('{resolution}', resolutionData)
+    for (const p in c.parameters) url = url.replace(`{${p}}`, (c.parameters[p] !== null) ? c.parameters[p] : '')
+    if (c.url.includes('{bbox}')) urls = [url.replace('{bbox}', bbox.toBBoxString())]
+    else {
+      url = c.url.replace('{z}', c.tileZoom)
+      const [xMin, yMin] = latLonToTileID(bbox.getNorth(), bbox.getWest(), c.tileZoom)
+      const [xMax, yMax] = latLonToTileID(bbox.getSouth(), bbox.getEast(), c.tileZoom)
       const xy = []
       for (let x = xMin; x <= xMax; x++) for (let y = yMin; y <= yMax; y++) xy.push([x, y])
-      this.download(xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y)), callback)
+      urls = xy.map(([x, y]) => url.replace('{x}', x).replace('{y}', y))
     }
+    this._download(options, cJSON, c, urls, callback)
   }
-  download(urls, callback) {
+  _download(options, cJSON, c, urls, callback) {
     const ds = {}
-    // prepare url
-    urls = urls.map(url => {
-      for (const p in this._parameters) url = url.replace(`{${p}}`, (this._parameters[p] !== null) ? this._parameters[p] : '')
-      return url
-    })
     // prepare the final data
     const useData = (url, data) => {
       ds[url] = data
@@ -65,14 +119,21 @@ export class Download {
       }
       try {
         callback(result)
+        if (Object.keys(this._cache[cJSON]._cachedData).length > cacheSize * urls.length) this._cache[cJSON]._cachedData = {}
       } catch (e) {
         console.error(e)
       }
     }
     // start downloads
     for (const url of urls) {
-      if ((this._debug || !this._silent) && this._progress) this._progress.log(url)
-      d3.json(url).then(data => useData(url, data)).catch(e => useData(url, null))
+      if (url in c._cachedData) {
+        if ((options.debug || !options.silent) && this._progress) this._progress.log(`cached: ${url}`)
+        useData(url, c._cachedData[url])
+      } else d3.json(url).then(data => {
+        if ((options.debug || !options.silent) && this._progress) this._progress.log(`download: ${url}`)
+        this._cache[cJSON]._cachedData[url] = data
+        useData(url, data)
+      }).catch(e => useData(url, null))
     }
   }
 }

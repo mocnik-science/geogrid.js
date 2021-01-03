@@ -116,7 +116,7 @@ export const initCore = (options, eventListener, callback, visual) => {
     const {_processDataInWebWorker} = initCore2(options, eventListener, callback, _progress)
     // process
     _processDataInWebWorker()
-  } else if (options.pureBBox) new Download(options, options, 0, options.pureResolution, _progress).load(options.pureBBox, data => {
+  } else if (options.pureBBox) new Download(_progress).load(options, options, 0, options.pureResolution, options.pureBBox, data => {
     // save the data
     options.data = data
     options.url = null

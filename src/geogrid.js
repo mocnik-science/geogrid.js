@@ -333,7 +333,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     t._progress.showProgress()
     t._progress.debugStep(t.options.url !== null ? 'download data' : 'update data', 2.5)
     t._bboxData = this._map.getBounds().pad(this.options.bboxDataPad - 1)
-    const resolution = t.options.resolution(t._map.getZoom())
+    const resolutionData = t.options.resolution(t._map.getZoom())
     // download the data
     let n = 0
     const useData = (source, data) => {
@@ -344,8 +344,8 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       }
       if (n == t.options.sources.length) t._processData()
     }
-    for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null && source.url !== undefined) new Download(this.options, source, sourceN, resolution, t._progress).load(t._bboxData, data => {
-      t._resolutionData = resolution
+    for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null && source.url !== undefined) new Download(t._progress).load(this.options, source, sourceN, resolutionData, t._bboxData, data => {
+      t._resolutionData = resolutionData
       t.fire('dataDownloaded', {data: t.options.multipleSources ? t.options.sources : t.options.sources[0]})
       useData(source, data)
     })
