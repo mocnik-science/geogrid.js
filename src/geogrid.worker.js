@@ -60,6 +60,9 @@ onmessage = e => {
   }
 }
 
+// config
+const cacheSize = 2
+
 // constants
 const rad = Math.PI / 180
 const radCircle = 2 * Math.PI
@@ -170,7 +173,6 @@ const computeGeoJSON = (json, bbox) => {
         if (n.id !== d.id && Math.abs(d.lon - n.lon) < 180) d.neighbors.push(n.idLong)
         if (d.neighbors.length >= numberOfNeighborsToLookFor) break
       }
-      cacheNeighbors[d.id] = d.neighbors
     }
     cells[d.idLong] = d
   }
@@ -237,6 +239,8 @@ const computeGeoJSON = (json, bbox) => {
 
   // cache neighbours
   debugStep('cache neighbours and vertices', 55)
+  if (Object.keys(cacheNeighbors).length > cacheSize * Object.keys(cells).length) cacheNeighbors = {}
+  if (Object.keys(cacheVertices).length > cacheSize * Object.keys(cells).length) cacheVertices = {}
   for (const id in cells) if (cells[id].filtered != false) {
     cacheNeighbors[id] = cells[id].neighbors
     cacheVertices[id] = cells[id].vertices

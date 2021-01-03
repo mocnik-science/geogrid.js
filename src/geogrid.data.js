@@ -173,7 +173,7 @@ export class Data {
         }
       }
       for (const k of Object.keys(source.data)) if (k != 'data') dataCells[k] = source.data[k]
-      source.data.data = true
+      if (source.data.url) source.data.data = true
     }
     dataCells.data = Object.values(dataCells.data)
     return dataCells

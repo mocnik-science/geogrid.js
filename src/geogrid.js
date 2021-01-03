@@ -325,7 +325,7 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
       }
       if (n == t.options.sources.length) t._processData()
     }
-    for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null) new Download(this.options, source, sourceN, resolution, t._progress).load(t._bboxData, data => {
+    for (const [sourceN, source] of t.options.sources.entries()) if (source.url !== null && source.url !== undefined) new Download(this.options, source, sourceN, resolution, t._progress).load(t._bboxData, data => {
       t._resolutionData = resolution
       t.fire('dataDownloaded', {data: t.options.multipleSources ? t.options.sources : t.options.sources[0]})
       useData(source, data)
