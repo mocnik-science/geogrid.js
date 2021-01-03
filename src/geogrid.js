@@ -90,16 +90,14 @@ if (leafletLoaded && d3Loaded) L.ISEA3HLayer = L.Layer.extend({
     const eventListener = d => {
       if (this._map) switch (d.task) {
         case 'resultPluginsHover':
-          if (!d.cell || !this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
-            for (const cell of this._hoveredCells) {
+          if (d.cell && !this._hoveredCells.map(c => c.idLong).includes(d.cell.idLong)) {
+            for (const cell of this._hoveredCells.map(c => c !== undefined && c !== null)) {
               const ePlugin = eventForPlugin(cell)
               if (cell.idLong !== d.cell.idLong) for (let p of this._plugins) if (p.onUnhover !== undefined) p.onUnhover(ePlugin)
             }
-            if (d.cell) {
-              const ePlugin = eventForPlugin(d.cell)
-              this._hoveredCells = [d.cell]
-              for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
-            }
+            const ePlugin = eventForPlugin(d.cell)
+            this._hoveredCells = [d.cell]
+            for (let p of this._plugins) if (p.onHover !== undefined) p.onHover(ePlugin)
           }
           break
         case 'resultPluginsClick':
