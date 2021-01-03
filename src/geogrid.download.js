@@ -76,6 +76,7 @@ export class Download {
       ...c,
       _cachedFor: new Set(),
       _cachedData: {},
+      _callbacksDownloading: {},
     }
     // add sourceN to _cachedFor
     this._cache[cJSON]._cachedFor.add(sourceN)
@@ -126,14 +127,23 @@ export class Download {
     }
     // start downloads
     for (const url of urls) {
-      if (url in c._cachedData) {
+      if (url in this._cache[cJSON]._cachedData) {
         if ((options.debug || !options.silent) && this._progress) this._progress.log(`cached: ${url}`)
         useData(url, c._cachedData[url])
-      } else d3.json(url).then(data => {
-        if ((options.debug || !options.silent) && this._progress) this._progress.log(`download: ${url}`)
-        this._cache[cJSON]._cachedData[url] = data
-        useData(url, data)
-      }).catch(e => useData(url, null))
+      } else if (url in this._cache[cJSON]._callbacksDownloading) this._cache[cJSON]._callbacksDownloading[url].push((url, data) => useData(url, data))
+      else {
+        this._cache[cJSON]._callbacksDownloading[url] = []
+        d3.json(url).then(data => {
+          if ((options.debug || !options.silent) && this._progress) this._progress.log(`download: ${url}`)
+          this._cache[cJSON]._cachedData[url] = data
+          useData(url, data)
+          for (const cb of this._cache[cJSON]._callbacksDownloading[url]) {
+            if ((options.debug || !options.silent) && this._progress) this._progress.log(`cached: ${url}`)
+            cb(url, data)
+          }
+          delete this._cache[cJSON]._callbacksDownloading[url]
+        }).catch(e => useData(url, null))
+      }
     }
   }
 }
