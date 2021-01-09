@@ -136,7 +136,7 @@ export class Download {
       else {
         this._cache[cJSON]._callbacksDownloading[url] = []
         d3.json(url).then(data => {
-          if ((options.debug || !options.silent) && this._progress) this._progress.log(`download: ${url}`)
+          if ((options.debug || !options.silent) && this._progress) this._progress.log(`downloaded: ${url}`)
           this._cache[cJSON]._cachedData[url] = data
           useData(url, data)
           for (const cb of this._cache[cJSON]._callbacksDownloading[url]) {
@@ -145,8 +145,14 @@ export class Download {
           }
           delete this._cache[cJSON]._callbacksDownloading[url]
         }).catch(e => {
-          this._progress.error(e)
+          if ((options.debug || !options.silent) && this._progress) this._progress.log(`downloaded with error: ${url}`)
+          this._cache[cJSON]._cachedData[url] = null
           useData(url, null)
+          for (const cb of this._cache[cJSON]._callbacksDownloading[url]) {
+            if ((options.debug || !options.silent) && this._progress) this._progress.log(`cached: ${url}`)
+            cb(url, null)
+          }
+          delete this._cache[cJSON]._callbacksDownloading[url]
         })
       }
     }
