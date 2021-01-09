@@ -213,9 +213,9 @@ The `ISEA3HLayer` has the following methods to add or remove it to/from a Leafle
 
 | Method | Description |
 | ----- | ----------- |
-| `addTo(map)` | Adds the layer to the given map. |
-| `removeFrom(map)` | Removes the layer from the given map.  The layer is destroyed and cannot be re-used. |
-| `hideFrom(map)` | Hides the layer from the given map.  When needed, the layer can be added to the same or another map at a later point in time. |
+| `addTo(map)` | Adds the layer to the given `map`. |
+| `removeFrom(map)` | Removes the layer from the given `map`.  The layer is destroyed and cannot be re-used. |
+| `hideFrom(map)` | Hides the layer from the given `map`.  When needed, the layer can be added to the same or another map at a later point in time. |
 | `update(options)` | Updates the options of the layer.  The layer is rendered or even re-computed if necessary. |
 | `updateSources(sources)` | Updates the list of sources, including the source-specific options. |
 
