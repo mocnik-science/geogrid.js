@@ -62,7 +62,7 @@ In both cases, further parameters can be encoded, as is discussed in the descrip
 
 The grid cell IDs are assumed to conform to both *adaptive* and *non-adaptive IDs*, as is described in:
 
-* F.-B. Mocnik: **A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.** Cartography and Geographic Information science, 2018, to appear
+* F.-B. Mocnik: [**A Novel Identifier Scheme for the ISEA Aperture 3 Hexagon Discrete Global Grid System.**](https://doi.org/10.1080/15230406.2018.1455157) Cartography and Geographic Information science 46(3), 2019, 277–291. [doi:10.1080/15230406.2018.1455157](https://doi.org/10.1080/15230406.2018.1455157)
 
 Data which is formatted in the above format is, for example, provided by the framework [Measures REST](https://github.com/giscience/measures-rest).
 
