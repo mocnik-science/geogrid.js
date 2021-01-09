@@ -16,12 +16,12 @@ This library is compatible with the framework [**Measures REST**](https://github
 
 ## Use the Library
 
-To load the library, include the following in your header:
+To load the library, include the following in the header of your HTML file:
 ```html
 <script src="https://unpkg.com/geogrid.js"></script>
 ```
 
-In addition, the library `geogrid.js` requires some further libraries to be loaded:
+In addition, the library `geogrid.js` requires the following libraries to be loaded:
 
 * [Leaflet](http://leafletjs.com)
 * [PixiJS](http://www.pixijs.com)
@@ -35,14 +35,18 @@ In order to use the `ISEA3HLayer`, a Leaflet map needs to be loaded first, for e
 var map = L.map('map').setView([49.4, 8.7], 10);
 ```
 
-In the following, we can add the `ISEA3HLayer`, which is provided by this library:
+Then, the `ISEA3HLayer`, which is provided by this library, can be added:
 ```javascript
 var isea3h = L.isea3hLayer({
-  url: 'http://localhost:8080/api/test-measure/grid?resolution={resolution}&bbox={bbox}&date={date}&dateFrom={dateFrom}',
+  url: 'http://localhost:8080/.../{z}/{x}/{y}.json',
 }).addTo(map);
 ```
 
-As an option, a URL needs to be provided under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be encoded, as is discussed in the description of the option `parameters`.  The data should be formatted as follows:
+As an option, a URL needs to be provided under which data aggregated by the ISEA3H grid is available.  Such a URL can be provided in two different formats:
+1. in an XYZ [tile format](https://en.wikipedia.org/wiki/Tiled_web_map) by including the paramters `{x}`, `{y}`, and `{z}`, thus allowing to load the data on demand, and
+2. as a API URI that provides the data corresponding for a given bounding box `{bbox}` and resolution `{resolution}`.
+
+In both cases, further parameters can be encoded, as is discussed in the description of the option `parameters`.  In all cases, the provided data should be formatted as follows:
 ```json
 {
     "type":"grid",
@@ -67,15 +71,15 @@ The `ISEA3HLayer` can be used in combination with different base maps.  A good c
 var map = L.map('map').setView([49.4, 8.7], 10);
 L.stamenTileLayer('toner-lite').addTo(map);
 L.isea3hLayer({
-  url: 'http://localhost:8080/api/test-measure/grid?resolution={resolution}&bbox={bbox}&date={date}&dateFrom={dateFrom}',
+  url: 'http://localhost:8080/.../{z}/{x}/{y}.json',
 }).addTo(map);
 ```
 
-## Example
+## Examples
 
 An example can be found in the subdirectory [example](https://github.com/mocnik-science/geogrid.js/tree/master/example).  Observe that the example `index-with-server.html` presumes a local instance of [Measures REST](https://github.com/giscience/measures-rest).
 
-## Options
+### Examples: Options
 
 The `ISEA3HLayer` accepts several options, which allow to easily adapt the layer to the data source and the visualization needs.  Instead of depicting representing the value related to a grid cell by the colour, the value can also be encoded by the size of the grid cell:
 ```javascript
@@ -107,6 +111,52 @@ isea3h.update({
 })
 ```
 
+### Examples: Several Data Sources
+
+The `ISEA3HLayer` accepts one or more data sources.  In many cases, only one data source is to be depicted.  This is the case that has been discussed before – the URL that provides reference to the data and other options are provided as options:
+```javascript
+L.isea3hLayer({
+  url: '...',
+  cellColorKey: 'value1',
+  cellSizeKey: 'value',
+  silent: false,
+  renderer: 'webgl',
+})
+```
+Observe that the options `silent` and `renderer` do not refer to this particular dataset but the layer in general.  This is in contrast to the options `url`, `cellColorKey`, and `cellSizeKey`, which refer to the data source and its representation.  Instead of mixing these options (which is allowed), they can be separated as follows:
+```javascript
+L.isea3hLayer({
+  sources: [{
+    url: '...',
+    cellColorKey: 'value1',
+    cellSizeKey: 'value2',
+  }],
+  silent: false,
+  renderer: 'webgl',
+})
+```
+This way of providing the options has the advantage that it becomes obvious which options are only valid for the provided data source, and it allows to add additional data sources.  For instance, several sources can be provided as follows:
+```javascript
+L.isea3hLayer({
+  sources: [{
+    url: '...',
+    cellColorKey: 'value1',
+    cellSizeKey: 'value2',
+  }, {
+    url: '...',
+    cellColorKey: null,
+    cellSizeKey: 'value',
+  }],
+  silent: false,
+  renderer: 'webgl',
+})
+```
+It is important to note that the two ways of noting down the sources – inline with the general options in case of one source, or under `sources` in case of one or more sources – cannot be mixed.
+
+The several options available are described in the following.
+
+## Options
+
 The following options are available to describe the data sources and their handling:
 
 | Option | Type | Default | Description |
@@ -114,6 +164,7 @@ The following options are available to describe the data sources and their handl
 | `url` | `String` | `null` | URL under which data aggregated by the ISEA3H grid is available.  The URL potentially contains information about the bounding box and the resolution, encoded by `{bbox}` and `{resolution}` respectively.  Further parameters can be used in the `url` by providing corresponding values in the option `parameters`.  The expected format of the returned data is described above. |
 | `data` | `Object` | `null` | Instead of the parameter `url`, the data can be provided explicitly. |
 | `parameters` | `Object` | `{date: new Date().toLocaleDateString(), dateFrom: null}` | Additional parameters that can be used in the `url`. |
+| `hide` | `Boolean` | `false` | Determines whether the source should be hidden.  Can be useful for empty grids that are used to make incomplete data complete. |
 | `tileZoom` | `Number` | `7` | Zoom to be used for the tiles in case of a tile URL.
 | `cellColorKey` | `String` | `value` | The colour to be used for a grid cell can be chosen in dependence of the property `cellColorKey` of the cell.  The colour is, accordingly, determined by computing the function `cellColorScale` with the property `cellColorKey` of the cell as argument.  If the option `cellColorKey` is `null`, the colour `cellColorNoKey` is used instead. |
 | `cellColorMin` | `Number` | `0` | Minimum value to be used in `cellColorScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
@@ -121,7 +172,7 @@ The following options are available to describe the data sources and their handl
 | `cellColorScale` | `Function` | `(min, max) => d3.scaleLinear().domain([min, max]).range(['#fff', '#f00'])` | This option is used to determine the colour to be used for a grid cell, when `cellColorKey` is not `null`.  This option is either (1) a function that returns, for a the property `cellColorKey` of the cell, the colour that should be used for the cell; or (2) a function that returns for given `min` and `max` values a function as in (1). |
 | `cellColorNoData` | `String` | `'#eee'` | Colour to be used for a grid cell, when no data is available for this particular cell. |
 | `cellColorNoKey` | `String` | `'#f00'` | Colour to be used for a grid cell, when `cellColorKey` is `null`. |
-| `cellColorOpacity` | `Number` | `.5` | Opacity of the colour to be used for the grid cells. |
+| `cellColorOpacity` | `Number` | `.5` | Opacity of the area of the grid cells. |
 | `cellSizeKey` | `String` | `null` | The relative size of a grid cell can be chosen in dependence of the property `cellSizeKey` of the cell.  The relative size is, accordingly, determined by computing the function `cellSizeScale` with the property `cellSizeKey` of the cell as argument.  If the option `cellSizeKey` is `null`, the relative size `cellSizeNoKey` is used instead. |
 | `cellSizeMin` | `Number` | `0` | Minimum value to be used in `cellSizeScale`.  If `null`, the minimum value is determined by the data of the currently cached cells. |
 | `cellSizeMax` | `Number` | `null` | Maximum value to be used in `cellSizeScale`.  If `null`, the maximum value is determined by the data of the currently cached cells. |
@@ -141,6 +192,10 @@ In addition, the following general options are available:
 | `debug` | `Boolean` | `false` | Enables debug mode.  When enabled, the grid cells are highlighted, and debug information is shown in the console (`silent` is `false`). |
 | `cellContourColor` | `String` | `'#fff'` | Colour to be used for the contour of a cell. |
 | `cellContourWidth` | `Number` | `2` | Width of the contour of a cell. |
+| `cellContourOpacity` | `Number` | `1` | Opacity of the contour of a cell. |
+| `cellCentroidColor` | `String` | `null` | Color of the dot representing the centroid of a cell. |
+| `cellCentroidRadius` | `Number` | `1` | Radius of the dot representing the centroid of a cell. |
+| `cellCentroidOpacity` | `Number` | `1` | Opacity of the centroid of a cell. |
 | `colorProgressBar` | `String` | `'#ff5151'` | Colour of the progress bar shown when loading new data. |
 | `colorDebug` | `String` | `'#1e90ff'` | Colour used to highlight certain aspects when using the `debug` mode. |
 | `colorDebugEmphasized` | `String` | `'#f00'` | Colour used to highlight very important aspects when using the `debug` mode. |
@@ -151,6 +206,18 @@ In addition, the following general options are available:
 | `renderer` | `'webgl'`\|`'svg'` | `'webgl'` | Renderer to be used.  The WebGL renderer (default choice) is much faster than the SVG renderer, but the SVG renderer might offer advantages in some scenarios where a interaction is crucial. |
 | `pureBBox` | `L.LatLngBounds` | `null` | Bounding box for which the data is downloaded in case of the pure function (`L.isea3hToGeoJSON`; see below). |
 | `pureResolution` | `Number` | `7` | Resolution that is used for the data download in case of the pure function (`L.isea3hToGeoJSON`; see below). |
+
+## Methods
+
+The `ISEA3HLayer` has the following methods to add or remove it to/from a Leaflet map object, and to update its options:
+
+| Method | Description |
+| ----- | ----------- |
+| `addTo(map)` | Adds the layer to the given map. |
+| `removeFrom(map)` | Removes the layer from the given map.  The layer is destroyed and cannot be re-used. |
+| `hideFrom(map)` | Hides the layer from the given map.  When needed, the layer can be added to the same or another map at a later point in time. |
+| `update(options)` | Updates the options of the layer.  The layer is rendered or even re-computed if necessary. |
+| `updateSources(sources)` | Updates the list of sources, including the source-specific options. |
 
 ## Events
 
@@ -283,6 +350,12 @@ npm run build
 ```
 
 The resulting minified file can be found in the subdirectory `dist`, which is created during this process.  In addition, a [JavaScript Source Map](https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Use_a_source_map) is created.
+
+## Known Bugs
+
+The following bugs are known but not yet addressed:
+* Downloaded data cached for the n-th source is not removed from the cache when updating the list of sources to have less than n sources.
+* Missing tiles are not handled correctly.
 
 ## Author
 
