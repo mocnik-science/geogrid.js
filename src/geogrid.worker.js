@@ -207,9 +207,16 @@ const computeGeoJSON = (json, bbox) => {
     }
     // sort angles
     c.angles.sort((a, b) => (a.angle < b.angle) ? -1 : 1)
+    // find highest latitude
+    let iMax = 0
+    let latMax = null
+    for (let i = 0; i < c.angles.length; i ++) if (latMax === null || c.angles[i].lat > latMax) {
+      iMax = i
+      latMax = c.angles[i].lat
+    }
     // compute vertices
     c.vertices = []
-    for (let i = 0; i < c.angles.length; i++) {
+    for (let i = iMax; i < iMax + c.angles.length; i++) {
       const n1 = c.angles[i % c.angles.length]
       const n2 = c.angles[(i + 1) % c.angles.length]
       c.vertices.push([(n1.lon + n2.lon + c.lon) / 3, (n1.lat + n2.lat + c.lat) / 3])
