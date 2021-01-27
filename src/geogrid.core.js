@@ -120,6 +120,8 @@ export const initCore = (options, eventListener, callback, visual) => {
     // save the data
     options.data = data
     options.url = null
+    // transform the data
+    if (options.data !== undefined && options.dataTransform) options.data = options.dataTransform(options.data)
     // proceed with the initialization
     const {_processDataInWebWorker} = initCore2(options, eventListener, callback, _progress)
     // process
