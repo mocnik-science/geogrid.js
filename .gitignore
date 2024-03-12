@@ -1,5 +1,6 @@
 dist/
 example/libs/**
+node_modules
 node_modules/
 .npmrc
 package-lock.json
