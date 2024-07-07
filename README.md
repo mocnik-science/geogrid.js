@@ -2,7 +2,7 @@
 
 The library `geogrid.js` provides a [Leaflet](http://leafletjs.com) layer that depicts data aggregated by the ISEA3H Discrete Global Grid System.  Thereby, the library renders the visualization using [WebGL](https://en.wikipedia.org/wiki/WebGL).
 
-![Overview](https://github.com/mocnik-science/geogrid.js/blob/master/docs/images/screenshot.jpg)
+![Overview](./docs/images/screenshot.jpg)
 
 ## Scientific Publications
 
